@@ -1,6 +1,6 @@
 {
-  "name": "LCC Data Console",
-  "description": "Internal desktop tool for supermarket category managers to upload and validate transaction data.",
+  "name": "Assortment Review",
+  "description": "A tool for retail category managers (CMs) to review Keep/Watch/Delist/Hold recommendations produced by an external scoring pipeline.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
