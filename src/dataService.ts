@@ -155,6 +155,24 @@ export const dataService = {
     }
   },
 
+  saveLiveEdit: async (skuId: string, storeId: string, action: 'KEEP' | 'DELIST', note: string): Promise<void> => {
+    await delay(300);
+    const liveIndex = mockSkuStoreStatuses.findIndex(s => s.skuId === skuId && s.storeId === storeId);
+    if (liveIndex >= 0) {
+      mockSkuStoreStatuses[liveIndex].recommendation = action;
+      mockDecisions.push({
+        skuId,
+        storeId,
+        generationId: `live-edit-${Date.now()}`,
+        bucket: 'FOR_REVIEW',
+        action,
+        overrideCategory: 'BUSINESS_RULE',
+        note,
+        decidedAt: new Date().toISOString()
+      });
+    }
+  },
+
   getAbArchives: async (): Promise<AbArchiveSnapshot[]> => {
     await delay(300);
     return mockAbArchives;

@@ -7,6 +7,7 @@ import CategoryDashboard from './components/views/CategoryDashboard';
 import IssueSummary from './components/views/IssueSummary';
 import QueueScreen from './components/views/QueueScreen';
 import AbSandboxScreen from './components/views/AbSandboxScreen';
+import AbEditScreen from './components/views/AbEditScreen';
 import AssortmentTracker from './components/views/AssortmentTracker';
 import HistoryView from './components/views/HistoryView';
 import LoginView from './components/views/LoginView';
@@ -29,6 +30,7 @@ export default function App() {
       case 'assortment-tracker': return <AssortmentTracker />;
       case 'history': return <HistoryView />;
       case 'ab-sandbox': return <AbSandboxScreen onViewChange={setCurrentView} />;
+      case 'ab-edit': return <AbEditScreen onViewChange={setCurrentView} />;
       default: return <HomeView />;
     }
   };
@@ -41,6 +43,7 @@ export default function App() {
       case 'issue-summary': return 'Exception Dashboard';
       case 'review-queue': return 'Generate AB';
       case 'ab-sandbox': return 'AB Sandbox';
+      case 'ab-edit': return 'Edit AB';
       case 'assortment-tracker': return 'Assortment Tracker';
       case 'history': return 'History';
       default: return '';

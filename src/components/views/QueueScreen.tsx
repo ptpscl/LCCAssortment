@@ -126,7 +126,7 @@ export default function QueueScreen({ onViewChange }: Props) {
             {isLoading ? (
               <button
                 disabled
-                className="h-10 px-4 bg-brand-500 text-white rounded-[6px] font-medium text-[14px] shadow-sm opacity-50 cursor-not-allowed flex items-center gap-2"
+                className="h-10 px-4 bg-brand-600 text-white rounded-[6px] font-medium text-[14px] shadow-sm opacity-50 cursor-not-allowed flex items-center gap-2"
               >
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Generate AB
@@ -139,7 +139,7 @@ export default function QueueScreen({ onViewChange }: Props) {
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating || !category}
-                  className="h-10 px-4 bg-brand-500 hover:bg-brand-600 text-white rounded-[6px] font-medium text-[14px] shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="h-10 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[14px] shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {isGenerating && <Loader2 className="w-4 h-4 animate-spin" />}
                   Generate AB
@@ -149,10 +149,10 @@ export default function QueueScreen({ onViewChange }: Props) {
               <>
                 <span className="text-[14px] text-text-muted">You're up to date</span>
                 <button
-                  disabled
-                  className="h-10 px-4 bg-brand-500 text-white rounded-[6px] font-medium text-[14px] shadow-sm opacity-50 cursor-not-allowed"
+                  onClick={() => onViewChange('ab-edit')}
+                  className="h-10 px-4 bg-white border border-border-subtle text-text-main hover:bg-surface-bg rounded-[6px] font-medium text-[14px] shadow-sm transition-colors"
                 >
-                  Generate AB
+                  Edit AB
                 </button>
               </>
             )}

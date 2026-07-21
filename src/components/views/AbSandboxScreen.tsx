@@ -659,7 +659,7 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
               <button 
                 onClick={handlePublishConfirm}
                 disabled={isPublishing}
-                className="h-9 px-4 bg-brand-500 text-white rounded-[6px] font-medium text-[13px] shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="h-9 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[13px] shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 {isPublishing && <Loader2 className="w-4 h-4 animate-spin" />}
                 Confirm Publish
@@ -717,7 +717,7 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
               <button 
                 onClick={submitDisagree}
                 disabled={!overrideCategory || disagreeNote.length < 10}
-                className="h-9 px-4 bg-brand-500 text-white rounded-[6px] font-medium text-[13px] shadow-sm hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[13px] shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Submit Disagree
               </button>
@@ -741,7 +741,7 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
             </button>
             <button 
               onClick={() => setShowPublishModal(true)}
-              className="h-9 px-4 bg-brand-500 text-white rounded-[6px] font-medium text-[13px] shadow-sm hover:bg-brand-600 transition-colors"
+              className="h-9 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[13px] shadow-sm transition-colors"
             >
               Publish AB
             </button>
