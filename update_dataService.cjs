@@ -1,4 +1,6 @@
-import { 
+const fs = require('fs');
+
+const fileContent = `import { 
   DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, 
   SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, 
   AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary 
@@ -67,7 +69,7 @@ export const dataService = {
     const draftItems = items.map(item => ({ ...item })); 
 
     const draft: AbGenerationDraft = {
-      generationId: `gen-${Date.now()}`,
+      generationId: \`gen-\${Date.now()}\`,
       categoryId,
       weekId: '2026-W29', // Hardcode next week
       createdAt: new Date().toISOString(),
@@ -103,15 +105,6 @@ export const dataService = {
     }
   },
 
-  discardGeneration: async (generationId: string): Promise<void> => {
-    await delay(300);
-    const draftIndex = mockAbGenerationDrafts.findIndex(d => d.generationId === generationId);
-    if (draftIndex >= 0) {
-      // Just remove the draft completely so we can start over
-      mockAbGenerationDrafts.splice(draftIndex, 1);
-    }
-  },
-
   publishGeneration: async (generationId: string): Promise<void> => {
     await delay(1000);
     const draftIndex = mockAbGenerationDrafts.findIndex(d => d.generationId === generationId);
@@ -139,7 +132,7 @@ export const dataService = {
       let archive = mockAbArchives.find(a => a.weekId === draft.weekId);
       if (!archive) {
          archive = {
-            archiveId: `arch-${Date.now()}`,
+            archiveId: \`arch-\${Date.now()}\`,
             weekId: draft.weekId,
             archivedAt: new Date().toISOString(),
             categorySnapshots: []
@@ -164,7 +157,7 @@ export const dataService = {
     await delay(800);
     const newWeekId = '2026-W30';
     const snapshot: AbArchiveSnapshot = {
-      archiveId: `arch-${Date.now()}`,
+      archiveId: \`arch-\${Date.now()}\`,
       weekId: newWeekId,
       archivedAt: new Date().toISOString(),
       categorySnapshots: mockCategories.map(c => {
@@ -220,7 +213,7 @@ export const dataService = {
         }
       })),
       dataReliability: categorizations.map(cat => ({
-        label: groupBy === 'store' ? (cat.includes('Express') ? `LCC Express Store ${Math.floor(Math.random()*10)}` : `LCC Supermarket Store ${Math.floor(Math.random()*10)}`) : cat,
+        label: groupBy === 'store' ? (cat.includes('Express') ? \`LCC Express Store \${Math.floor(Math.random()*10)}\` : \`LCC Supermarket Store \${Math.floor(Math.random()*10)}\`) : cat,
         customerDb: Math.min(1, Math.random() * 0.15 + 0.85 * factor),
         loyaltySales: Math.min(1, Math.random() * 0.2 + 0.8 * factor),
         mmsSales: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
@@ -229,3 +222,6 @@ export const dataService = {
     };
   }
 };
+`;
+
+fs.writeFileSync('src/dataService.ts', fileContent);

@@ -12,8 +12,8 @@ export default function Sidebar({ currentView, onViewChange, onLogout }: Sidebar
     { id: 'home', label: 'Home', icon: Home },
     { id: 'executive-dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
     { id: 'category-dashboard', label: 'Category Dashboard', icon: BarChart3 },
-    { id: 'issue-summary', label: 'Issue Summary', icon: AlertCircle },
-    { id: 'review-queue', label: 'Review Queue', icon: ListChecks },
+    { id: 'issue-summary', label: 'Exception Dashboard', icon: AlertCircle },
+    { id: 'review-queue', label: 'Generate AB', icon: ListChecks },
     { id: 'assortment-tracker', label: 'Assortment Tracker', icon: LineChart },
   ];
 

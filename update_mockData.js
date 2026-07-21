@@ -1,4 +1,6 @@
-import { DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, Recommendation, Confidence, Flag, AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary } from './types';
+const fs = require('fs');
+
+const fileContent = `import { DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, Recommendation, Confidence, Flag, AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary } from './types';
 
 export const mockDivisions: DivisionRecord[] = [
   { id: 'div-1', name: 'Fresh' },
@@ -22,20 +24,20 @@ export const mockDepartments: DepartmentRecord[] = [
 ];
 
 export const mockCategories: CategoryRecord[] = [
-  { id: 'cat-1', name: 'Detergent', departmentId: 'dep-7', assignedCm: 'Pat Cruz' },
+  { id: 'cat-1', name: 'Fruits', departmentId: 'dep-1', assignedCm: 'Pat Cruz' },
   { id: 'cat-2', name: 'Vegetables', departmentId: 'dep-1', assignedCm: 'Alex Rivers' },
   { id: 'cat-3', name: 'Chips', departmentId: 'dep-4', assignedCm: 'Jamie Chen' },
   { id: 'cat-4', name: 'Soda', departmentId: 'dep-5', assignedCm: 'Sam Taylor' },
   { id: 'cat-5', name: 'Hair Care', departmentId: 'dep-6', assignedCm: 'Morgan Lee' },
   { id: 'cat-6', name: 'Skin Care', departmentId: 'dep-6', assignedCm: 'Morgan Lee' },
-  { id: 'cat-7', name: 'Fruits', departmentId: 'dep-1', assignedCm: 'Taylor Swift' },
+  { id: 'cat-7', name: 'Cleaning Supplies', departmentId: 'dep-7', assignedCm: 'Taylor Swift' },
   { id: 'cat-8', name: 'Basic Tees', departmentId: 'dep-8', assignedCm: 'Jordan Smith' }
 ];
 
 export const mockClasses: ClassRecord[] = [
-  { id: 'cls-1', name: 'Liquid Detergent', categoryId: 'cat-1' },
-  { id: 'cls-2', name: 'Powder Detergent', categoryId: 'cat-1' },
-  { id: 'cls-3', name: 'Bar Detergent', categoryId: 'cat-1' },
+  { id: 'cls-1', name: 'Apples & Pears', categoryId: 'cat-1' },
+  { id: 'cls-2', name: 'Citrus', categoryId: 'cat-1' },
+  { id: 'cls-3', name: 'Berries', categoryId: 'cat-1' },
   { id: 'cls-4', name: 'Root Vegetables', categoryId: 'cat-2' },
   { id: 'cls-5', name: 'Leafy Greens', categoryId: 'cat-2' },
   { id: 'cls-6', name: 'Potato Chips', categoryId: 'cat-3' },
@@ -43,7 +45,7 @@ export const mockClasses: ClassRecord[] = [
   { id: 'cls-8', name: 'Shampoo & Conditioner', categoryId: 'cat-5' },
   { id: 'cls-9', name: 'Body Wash', categoryId: 'cat-5' },
   { id: 'cls-10', name: 'Lotions', categoryId: 'cat-6' },
-  { id: 'cls-11', name: 'Apples & Pears', categoryId: 'cat-7' },
+  { id: 'cls-11', name: 'Detergent', categoryId: 'cat-7' },
   { id: 'cls-12', name: 'V-Necks', categoryId: 'cat-8' }
 ];
 
@@ -65,19 +67,19 @@ export const mockStores: StoreRecord[] = [
 export const mockSkus: SkuRecord[] = [];
 export const mockSkuStoreStatuses: SkuStoreStatus[] = [];
 
-// Generate ~50 SKUs for Pat Cruz's category (cat-1: Detergent)
+// Generate ~50 SKUs for Pat Cruz's category (cat-1: Fruits)
 const generateData = () => {
   const patClasses = mockClasses.filter(c => c.categoryId === 'cat-1');
   let skuCounter = 1;
   
   for (let i = 0; i < 50; i++) {
     const classRecord = patClasses[i % patClasses.length];
-    const skuId = `sku-${skuCounter++}`;
+    const skuId = \`sku-\${skuCounter++}\`;
     
     const sku: SkuRecord = {
       id: skuId,
-      name: `${classRecord.name} Product ${skuCounter}`,
-      brand: `Brand ${(i % 5) + 1}`,
+      name: \`\${classRecord.name} Product \${skuCounter}\`,
+      brand: \`Brand \${(i % 5) + 1}\`,
       classId: classRecord.id,
       flags: (i % 7 === 0) ? ['STOCKOUT'] : [],
       duplicateGroupId: (i % 10 === 0) ? 'dup-1' : null,
@@ -186,7 +188,7 @@ mockClasses.forEach(cls => {
       
       const forReviewSkus = Math.floor(Math.random() * 25) + 10;
       
-      const weekId = `2026-W${14 + index}`; // Approx week number
+      const weekId = \`2026-W\${14 + index}\`; // Approx week number
 
       mockWeeklySnapshots.push({
         weekId,
@@ -237,20 +239,6 @@ mockClasses.slice(0, 3).forEach(cls => {
     });
   });
 });
+`;
 
-export const mockExecutiveSummary: ExecutiveSummary = {
-  assortmentComposition: [
-    { label: 'Supermarket Premium', skuMix: { core: 60, wing: 25, specialty: 15 }, loyaltyBaseline: 0.35, loyaltyCapture: 0.52 },
-    { label: 'Supermarket Large', skuMix: { core: 65, wing: 25, specialty: 10 }, loyaltyBaseline: 0.32, loyaltyCapture: 0.48 },
-    { label: 'Supermarket Small', skuMix: { core: 70, wing: 20, specialty: 10 }, loyaltyBaseline: 0.30, loyaltyCapture: 0.45 },
-    { label: 'Express Large', skuMix: { core: 80, wing: 15, specialty: 5 }, loyaltyBaseline: 0.25, loyaltyCapture: 0.35 },
-    { label: 'Express Small', skuMix: { core: 85, wing: 10, specialty: 5 }, loyaltyBaseline: 0.22, loyaltyCapture: 0.30 },
-  ],
-  dataReliability: [
-    { label: 'Supermarket Premium', customerDb: 0.98, loyaltySales: 0.95, mmsSales: 0.99, skuHierarchy: 0.97 },
-    { label: 'Supermarket Large', customerDb: 0.97, loyaltySales: 0.94, mmsSales: 0.98, skuHierarchy: 0.96 },
-    { label: 'Supermarket Small', customerDb: 0.95, loyaltySales: 0.90, mmsSales: 0.97, skuHierarchy: 0.95 },
-    { label: 'Express Large', customerDb: 0.92, loyaltySales: 0.85, mmsSales: 0.96, skuHierarchy: 0.92 },
-    { label: 'Express Small', customerDb: 0.88, loyaltySales: 0.80, mmsSales: 0.95, skuHierarchy: 0.90 },
-  ]
-};
+fs.writeFileSync('src/mockData.ts', fileContent);
