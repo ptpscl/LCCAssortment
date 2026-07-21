@@ -62,11 +62,26 @@ export interface Decision {
   decidedAt: string;
 }
 
+export interface CategorySnapshotMetrics {
+  categoryId: string;
+  categoryName: string;
+  divisionName: string;
+  departmentName: string;
+  publishedWeekId: string;
+  percentUpdated: number;
+  percentAgreement: number;
+  lastUpdatedBy: string;
+}
+
 export interface AbArchiveSnapshot {
   archiveId: string;
   weekId: string;
   archivedAt: string;
-  categorySnapshots: { categoryId: string; publishedWeekId: string }[];
+  categorySnapshots: CategorySnapshotMetrics[];
+}
+
+export interface AssortmentTrackerRow extends CategorySnapshotMetrics {
+  updatedAsOf: string; // for backward compatibility/alias to publishedWeekId
 }
 
 export interface AssortmentSnapshot {

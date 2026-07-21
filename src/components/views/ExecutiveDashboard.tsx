@@ -169,21 +169,28 @@ export default function ExecutiveDashboard() {
         <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
           <h3 className="text-[16px] font-semibold text-text-main mb-6">SKU Mix</h3>
           <div className="space-y-4 flex-1 max-h-[300px] overflow-y-auto pr-2">
-            {summary.assortmentComposition.map((row, i) => (
-              <div key={i} className="flex flex-col gap-1">
-                <div className="flex justify-between text-[12px]">
-                  <span className="font-medium text-text-main">{row.label}</span>
-                  <span className="text-text-muted">
-                    {row.skuMix.core.toFixed(1)}% / {row.skuMix.wing.toFixed(1)}% / {row.skuMix.specialty.toFixed(1)}%
-                  </span>
+            {summary.assortmentComposition.map((row, i) => {
+              const totalSkuMix = row.skuMix.core + row.skuMix.wing + row.skuMix.specialty;
+              const corePct = totalSkuMix > 0 ? (row.skuMix.core / totalSkuMix) * 100 : 0;
+              const wingPct = totalSkuMix > 0 ? (row.skuMix.wing / totalSkuMix) * 100 : 0;
+              const specPct = totalSkuMix > 0 ? (row.skuMix.specialty / totalSkuMix) * 100 : 0;
+
+              return (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex justify-between text-[12px]">
+                    <span className="font-medium text-text-main">{row.label}</span>
+                    <span className="text-text-muted">
+                      {row.skuMix.core.toFixed(1)}% / {row.skuMix.wing.toFixed(1)}% / {row.skuMix.specialty.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-4 w-full flex rounded-full overflow-hidden bg-surface-bg">
+                    <div style={{ width: `${corePct}%` }} className="bg-brand-600 transition-all duration-500" />
+                    <div style={{ width: `${wingPct}%` }} className="bg-[#6495ED] transition-all duration-500" />
+                    <div style={{ width: `${specPct}%` }} className="bg-[#AEC6CF] transition-all duration-500" />
+                  </div>
                 </div>
-                <div className="h-4 w-full flex rounded-full overflow-hidden bg-surface-bg">
-                  <div style={{ width: `${row.skuMix.core}%` }} className="bg-brand-600 transition-all duration-500" />
-                  <div style={{ width: `${row.skuMix.wing}%` }} className="bg-[#6495ED] transition-all duration-500" />
-                  <div style={{ width: `${row.skuMix.specialty}%` }} className="bg-[#AEC6CF] transition-all duration-500" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex items-center gap-6 text-[12px] mt-4 pt-4 border-t border-border-subtle shrink-0">
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-brand-600 mr-2" /><span className="text-text-muted">Core</span></div>
@@ -193,26 +200,43 @@ export default function ExecutiveDashboard() {
         </div>
 
         <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
-          <h3 className="text-[16px] font-semibold text-text-main mb-6">Loyalty Linkage</h3>
-          <div className="space-y-4 flex-1 max-h-[300px] overflow-y-auto pr-2">
-            {summary.assortmentComposition.map((row, i) => (
-              <div key={i} className="flex flex-col gap-1">
-                <div className="flex justify-between text-[12px]">
-                  <span className="font-medium text-text-main">{row.label}</span>
-                  <span className="text-text-muted">
-                    <span className="font-semibold text-text-main">{(row.loyaltyCapture * 100).toFixed(1)}%</span> / {(row.loyaltyBaseline * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="relative h-4 w-full bg-surface-bg rounded-full overflow-hidden">
-                  <div style={{ width: `${row.loyaltyBaseline * 100}%` }} className="absolute top-0 left-0 h-full bg-border-subtle transition-all duration-500" />
-                  <div style={{ width: `${row.loyaltyCapture * 100}%` }} className="absolute top-0 left-0 h-full bg-brand-600 transition-all duration-500" />
-                </div>
+          <div className="flex items-center gap-2 mb-6">
+            <h3 className="text-[16px] font-semibold text-text-main">Loyalty Linkage</h3>
+            <div className="relative group flex items-center">
+              <HelpCircle className="w-4 h-4 text-text-muted hover:text-text-main cursor-help transition-colors" />
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-white border border-border-subtle text-text-main text-[12px] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50">
+                Baseline is the percentage of sales that are loyalty-linked. Capture is the percentage successfully matched after accounting for data-quality issues in the loyalty stitching process. Capture is always a subset of baseline.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border-subtle"></div>
+                <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
               </div>
-            ))}
+            </div>
+          </div>
+          <div className="space-y-4 flex-1 max-h-[300px] overflow-y-auto pr-2">
+            {summary.assortmentComposition.map((row, i) => {
+              const capture = row.loyaltyCapture * 100;
+              const actualBaseline = row.loyaltyBaseline * 100;
+              // Ensure minimum visual gap if within 3%
+              const visualBaseline = (actualBaseline - capture > 0 && actualBaseline - capture < 3) ? capture + 3 : actualBaseline;
+
+              return (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex justify-between text-[12px]">
+                    <span className="font-medium text-text-main">{row.label}</span>
+                    <span className="text-text-muted">
+                      {capture.toFixed(1)}% / {actualBaseline.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="relative h-4 w-full flex rounded-full overflow-hidden bg-surface-bg">
+                    <div className="absolute left-0 top-0 h-full bg-brand-50 transition-all duration-500" style={{ width: `${Math.min(100, visualBaseline)}%` }} />
+                    <div className="absolute left-0 top-0 h-full bg-brand-600 transition-all duration-500" style={{ width: `${capture}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="flex items-center gap-6 text-[12px] mt-4 pt-4 border-t border-border-subtle shrink-0">
             <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-brand-600 mr-2" /><span className="text-text-muted">Capture</span></div>
-            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-border-subtle mr-2" /><span className="text-text-muted">Baseline</span></div>
+            <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-brand-50 mr-2" /><span className="text-text-muted">Baseline</span></div>
           </div>
         </div>
       </div>
@@ -224,9 +248,10 @@ export default function ExecutiveDashboard() {
             <h3 className="text-[16px] font-semibold text-text-main">Data Reliability</h3>
             <div className="relative group flex items-center">
               <HelpCircle className="w-4 h-4 text-text-muted hover:text-text-main cursor-help transition-colors" />
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-[12px] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50">
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-white border border-border-subtle text-text-main text-[12px] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50">
                 Data reliability represents the percentage of bronze data that successfully survived processing into gold data (clean + resolved).
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border-subtle"></div>
+                <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { 
   DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, 
   SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, 
-  AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary 
+  AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary, AssortmentTrackerRow
 } from './types';
 import { 
   mockDivisions, mockDepartments, mockCategories, mockClasses, mockStores, mockSkus, 
@@ -147,10 +147,24 @@ export const dataService = {
          mockAbArchives.push(archive);
       }
       const catSnap = archive.categorySnapshots.find(c => c.categoryId === draft.categoryId);
+      const catRec = mockCategories.find(c => c.id === draft.categoryId);
+      const dept = mockDepartments.find(d => d.id === catRec?.departmentId);
+      const div = mockDivisions.find(d => d.id === dept?.divisionId);
+      
       if (catSnap) {
          catSnap.publishedWeekId = draft.weekId;
+         catSnap.lastUpdatedBy = catRec?.assignedCm || 'Unknown';
       } else {
-         archive.categorySnapshots.push({ categoryId: draft.categoryId, publishedWeekId: draft.weekId });
+         archive.categorySnapshots.push({ 
+           categoryId: draft.categoryId,
+           categoryName: catRec?.name || 'Unknown',
+           divisionName: div?.name || 'Unknown',
+           departmentName: dept?.name || 'Unknown',
+           publishedWeekId: draft.weekId,
+           percentUpdated: 100,
+           percentAgreement: 100,
+           lastUpdatedBy: catRec?.assignedCm || 'Unknown' 
+         });
       }
     }
   },
@@ -178,22 +192,50 @@ export const dataService = {
     return mockAbArchives;
   },
 
+  getArchiveSnapshots: async (): Promise<AbArchiveSnapshot[]> => {
+    await delay(300);
+    // return sorted desc
+    return [...mockAbArchives].sort((a, b) => b.weekId.localeCompare(a.weekId));
+  },
+
+  getSnapshotDetail: async (archiveId: string) => {
+    await delay(300);
+    const archive = mockAbArchives.find(a => a.archiveId === archiveId);
+    if (!archive) throw new Error('Archive not found');
+    const grouped = {};
+    archive.categorySnapshots.forEach(snap => {
+      if (!grouped[snap.divisionName]) grouped[snap.divisionName] = [];
+      grouped[snap.divisionName].push(snap);
+    });
+    return grouped;
+  },
+
   simulateFridayArchive: async (): Promise<AbArchiveSnapshot> => {
     await delay(800);
     const newWeekId = '2026-W30';
-    const snapshot: AbArchiveSnapshot = {
+    // Deep copy the latest archive
+    const latestArchive = [...mockAbArchives].sort((a, b) => b.weekId.localeCompare(a.weekId))[0];
+    const snapshot = {
       archiveId: `arch-${Date.now()}`,
       weekId: newWeekId,
       archivedAt: new Date().toISOString(),
-      categorySnapshots: mockCategories.map(c => {
-         // find the last published week for this category (simplified)
-         return { categoryId: c.id, publishedWeekId: '2026-W28' }; 
-      })
+      categorySnapshots: latestArchive.categorySnapshots.map(c => ({...c}))
     };
     mockAbArchives.push(snapshot);
     return snapshot;
   },
-  
+
+  getAssortmentTrackerRows: async (): Promise<AssortmentTrackerRow[]> => {
+    await delay(400);
+    const latestArchive = [...mockAbArchives].sort((a, b) => b.weekId.localeCompare(a.weekId))[0];
+    if (!latestArchive) return [];
+    
+    return latestArchive.categorySnapshots.map(snap => ({
+      ...snap,
+      updatedAsOf: snap.publishedWeekId
+    }));
+  },
+
   // Kept for backward compatibility with existing ExecutiveDashboard
   getAssortmentSnapshots: async (classId?: string, storeFormat?: StoreFormat): Promise<AssortmentSnapshot[]> => {
     await delay(400);
@@ -223,27 +265,90 @@ export const dataService = {
     await delay(500);
     let factor = !storeCategorization || storeCategorization === 'All' ? 1 : 0.7 + (Math.random() * 0.3);
     
-    const categorizations = [
+    let baseCategorizations = [
       'Supermarket Premium', 'Supermarket Large', 'Supermarket Small',
       'Express Large', 'Express Small'
     ];
     
-    return {
-      assortmentComposition: mockExecutiveSummary.assortmentComposition.map(c => ({
-        ...c,
-        skuMix: {
-          core: Math.min(100, Math.max(0, c.skuMix.core * factor)),
-          wing: Math.min(100, Math.max(0, c.skuMix.wing * factor)),
-          specialty: Math.min(100, Math.max(0, c.skuMix.specialty * factor))
+    if (storeCategorization && storeCategorization !== 'All') {
+      if (baseCategorizations.includes(storeCategorization)) {
+        baseCategorizations = [storeCategorization];
+      } else {
+        baseCategorizations = [storeCategorization];
+      }
+    }
+    
+    let compositionBase = mockExecutiveSummary.assortmentComposition;
+    let reliabilityBase = mockExecutiveSummary.dataReliability;
+
+    if (storeCategorization && storeCategorization !== 'All') {
+      const match = compositionBase.find(c => c.label === storeCategorization);
+      if (match) {
+        compositionBase = [match];
+      } else {
+        compositionBase = [{ label: storeCategorization, skuMix: { core: 60, wing: 30, specialty: 10 }, loyaltyBaseline: 0.4, loyaltyCapture: 0.3 }];
+      }
+
+      const rMatch = reliabilityBase.find(r => r.label === storeCategorization);
+      if (rMatch) {
+        reliabilityBase = [rMatch];
+      } else {
+        reliabilityBase = [{ label: storeCategorization, customerDb: 0.9, loyaltySales: 0.9, mmsSales: 0.9, skuHierarchy: 0.9 }];
+      }
+    }
+
+    const assortmentComposition: any[] = [];
+    const dataReliability: any[] = [];
+
+    compositionBase.forEach(c => {
+      const r = reliabilityBase.find(rel => rel.label === c.label) || { label: c.label, customerDb: 0.9, loyaltySales: 0.9, mmsSales: 0.9, skuHierarchy: 0.9 };
+
+      if (groupBy === 'store') {
+        const numStores = Math.floor(Math.random() * 2) + 2;
+        for (let i = 0; i < numStores; i++) {
+          const storeLabel = c.label.includes('Express') ? `LCC Express Store ${Math.floor(Math.random()*100)}` : `LCC Supermarket Store ${Math.floor(Math.random()*100)}`;
+          
+          assortmentComposition.push({
+            ...c,
+            label: storeLabel,
+            skuMix: {
+              core: Math.min(100, Math.max(0, c.skuMix.core * factor * (0.9 + Math.random()*0.2))),
+              wing: Math.min(100, Math.max(0, c.skuMix.wing * factor * (0.9 + Math.random()*0.2))),
+              specialty: Math.min(100, Math.max(0, c.skuMix.specialty * factor * (0.9 + Math.random()*0.2)))
+            }
+          });
+
+          dataReliability.push({
+            label: storeLabel,
+            customerDb: Math.min(1, Math.random() * 0.15 + 0.85 * factor),
+            loyaltySales: Math.min(1, Math.random() * 0.2 + 0.8 * factor),
+            mmsSales: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
+            skuHierarchy: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
+          });
         }
-      })),
-      dataReliability: categorizations.map(cat => ({
-        label: groupBy === 'store' ? (cat.includes('Express') ? `LCC Express Store ${Math.floor(Math.random()*10)}` : `LCC Supermarket Store ${Math.floor(Math.random()*10)}`) : cat,
-        customerDb: Math.min(1, Math.random() * 0.15 + 0.85 * factor),
-        loyaltySales: Math.min(1, Math.random() * 0.2 + 0.8 * factor),
-        mmsSales: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
-        skuHierarchy: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
-      }))
+      } else {
+        assortmentComposition.push({
+          ...c,
+          skuMix: {
+            core: Math.min(100, Math.max(0, c.skuMix.core * factor)),
+            wing: Math.min(100, Math.max(0, c.skuMix.wing * factor)),
+            specialty: Math.min(100, Math.max(0, c.skuMix.specialty * factor))
+          }
+        });
+
+        dataReliability.push({
+          label: c.label,
+          customerDb: Math.min(1, Math.random() * 0.15 + 0.85 * factor),
+          loyaltySales: Math.min(1, Math.random() * 0.2 + 0.8 * factor),
+          mmsSales: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
+          skuHierarchy: Math.min(1, Math.random() * 0.1 + 0.9 * factor),
+        });
+      }
+    });
+    
+    return {
+      assortmentComposition,
+      dataReliability
     };
   }
 };

@@ -136,17 +136,85 @@ const generateData = () => {
 generateData();
 
 export const mockDecisions: Decision[] = [];
-export const mockAbArchives: AbArchiveSnapshot[] = [
-  {
-    archiveId: 'arch-1',
-    weekId: '2026-W28',
-    archivedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Last Friday
-    categorySnapshots: [
-      { categoryId: 'cat-1', publishedWeekId: '2026-W28' },
-      { categoryId: 'cat-2', publishedWeekId: '2026-W28' }
-    ]
-  }
-];
+
+const generateMockArchives = () => {
+  const archives = [];
+  const weeks = ['2026-W24', '2026-W25', '2026-W26', '2026-W27', '2026-W28', '2026-W29'];
+  const dates = [
+    new Date('2026-06-12T18:00:00Z'),
+    new Date('2026-06-19T18:00:00Z'),
+    new Date('2026-06-26T18:00:00Z'),
+    new Date('2026-07-03T18:00:00Z'),
+    new Date('2026-07-10T18:00:00Z'),
+    new Date('2026-07-17T18:00:00Z'),
+  ];
+  
+  // Base states for each category
+  const catStates = mockCategories.map(c => {
+    const dept = mockDepartments.find(d => d.id === c.departmentId);
+    const div = mockDivisions.find(d => d.id === dept?.divisionId);
+    
+    // Healthy vs stale
+    const isStale = (c.id === 'cat-3' || c.id === 'cat-6');
+    let basePercent = isStale ? 100 : 98 + Math.random() * 2;
+    
+    return {
+      categoryId: c.id,
+      categoryName: c.name,
+      divisionName: div?.name || 'Unknown',
+      departmentName: dept?.name || 'Unknown',
+      assignedCm: c.assignedCm,
+      isStale,
+      currentPercent: basePercent,
+      publishedWeekId: weeks[0]
+    };
+  });
+
+  weeks.forEach((weekId, index) => {
+    const snapshots = catStates.map(state => {
+      // Fluctuate agreement
+      const percentAgreement = 75 + Math.random() * 23;
+      
+      let lastUpdatedBy = state.assignedCm;
+      
+      // For stale, they stop updating after a while
+      if (state.isStale) {
+        if (index > 0) {
+          state.currentPercent -= (15 + Math.random() * 10);
+        }
+      } else {
+        // Healthy: Update each week
+        state.publishedWeekId = weekId;
+        state.currentPercent = 98 + Math.random() * 2;
+        if (state.categoryId === 'cat-1' && index % 2 === 0) {
+           lastUpdatedBy = 'Backup Admin (Alex Rivers)';
+        }
+      }
+
+      return {
+        categoryId: state.categoryId,
+        categoryName: state.categoryName,
+        divisionName: state.divisionName,
+        departmentName: state.departmentName,
+        publishedWeekId: state.publishedWeekId,
+        percentUpdated: Math.max(0, state.currentPercent),
+        percentAgreement,
+        lastUpdatedBy
+      };
+    });
+
+    archives.unshift({
+      archiveId: `arch-${index + 1}`,
+      weekId,
+      archivedAt: dates[index].toISOString(),
+      categorySnapshots: snapshots
+    });
+  });
+  return archives;
+};
+
+export const mockAbArchives: AbArchiveSnapshot[] = generateMockArchives();
+
 export const mockAbGenerationDrafts: AbGenerationDraft[] = [];
 
 const formats: StoreFormat[] = ['HYPER', 'SUPER', 'EXPRESS'];
@@ -240,11 +308,11 @@ mockClasses.slice(0, 3).forEach(cls => {
 
 export const mockExecutiveSummary: ExecutiveSummary = {
   assortmentComposition: [
-    { label: 'Supermarket Premium', skuMix: { core: 60, wing: 25, specialty: 15 }, loyaltyBaseline: 0.35, loyaltyCapture: 0.52 },
-    { label: 'Supermarket Large', skuMix: { core: 65, wing: 25, specialty: 10 }, loyaltyBaseline: 0.32, loyaltyCapture: 0.48 },
-    { label: 'Supermarket Small', skuMix: { core: 70, wing: 20, specialty: 10 }, loyaltyBaseline: 0.30, loyaltyCapture: 0.45 },
-    { label: 'Express Large', skuMix: { core: 80, wing: 15, specialty: 5 }, loyaltyBaseline: 0.25, loyaltyCapture: 0.35 },
-    { label: 'Express Small', skuMix: { core: 85, wing: 10, specialty: 5 }, loyaltyBaseline: 0.22, loyaltyCapture: 0.30 },
+    { label: 'Supermarket Premium', skuMix: { core: 60, wing: 25, specialty: 15 }, loyaltyBaseline: 0.52, loyaltyCapture: 0.35 },
+    { label: 'Supermarket Large', skuMix: { core: 65, wing: 25, specialty: 10 }, loyaltyBaseline: 0.48, loyaltyCapture: 0.32 },
+    { label: 'Supermarket Small', skuMix: { core: 70, wing: 20, specialty: 10 }, loyaltyBaseline: 0.45, loyaltyCapture: 0.30 },
+    { label: 'Express Large', skuMix: { core: 80, wing: 15, specialty: 5 }, loyaltyBaseline: 0.35, loyaltyCapture: 0.25 },
+    { label: 'Express Small', skuMix: { core: 85, wing: 10, specialty: 5 }, loyaltyBaseline: 0.30, loyaltyCapture: 0.22 },
   ],
   dataReliability: [
     { label: 'Supermarket Premium', customerDb: 0.98, loyaltySales: 0.95, mmsSales: 0.99, skuHierarchy: 0.97 },
