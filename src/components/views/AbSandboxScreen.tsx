@@ -3,7 +3,7 @@ import { dataService } from '../../dataService';
 import { 
   AbGenerationDraft, CategoryRecord, SkuRecord, StoreRecord, SkuStoreStatus, Decision
 } from '../../types';
-import { Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, X, HelpCircle } from 'lucide-react';
 
 interface Props {
   onViewChange?: (view: string) => void;
@@ -25,6 +25,7 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
   const [stores, setStores] = useState<Map<string, StoreRecord>>(new Map());
   
   const [expandedSkus, setExpandedSkus] = useState<Set<string>>(new Set());
+  const [expandedStoreScores, setExpandedStoreScores] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Record<BucketType, boolean>>({
     AUTO_KEEP: true,
     AUTO_DELIST: true,
@@ -137,6 +138,60 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
       else next.add(skuId);
       return next;
     });
+  };
+
+  const toggleStoreScore = (skuId: string, storeId: string) => {
+    const key = `${skuId}-${storeId}`;
+    setExpandedStoreScores(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const getSignalTooltip = (label: string) => {
+    let definition = '';
+    let example = '';
+    switch (label) {
+      case 'Sales':
+        definition = "How much of the category's revenue this item earns here, and whether that share is growing or shrinking.";
+        example = "e.g. if the category earns ₱64,500/week and this item earns ₱21,000, it holds about a third of the category.";
+        break;
+      case 'Buyer Penetration':
+        definition = "How many different shoppers buy this item at least once, out of everyone who shops here.";
+        example = "e.g. 320 of 1,000 regular shoppers bought it, that's a staple, not a niche pick.";
+        break;
+      case 'Demographic Fit':
+        definition = "Whether the kind of people who usually buy this item match the kind of people who actually shop at this branch.";
+        example = "e.g. baby formula scores high near a hospital, low near a university campus, even with identical total sales.";
+        break;
+      case 'Loyalty Depth':
+        definition = "Whether the same customers keep coming back for this item, or it was a one-time promo purchase.";
+        example = "e.g. a detergent bought by the same households every few weeks scores high; a bundle only sold on discount scores low.";
+        break;
+      case 'Network':
+        definition = "How many other items would lose sales if this one disappeared from the shelf.";
+        example = "e.g. a flavor bought alongside rice, ketchup, and bread is a hub, removing it hurts several other products too.";
+        break;
+      case 'Uniqueness':
+        definition = "Whether a near-identical alternative sits right next to it on the shelf.";
+        example = "e.g. the fourth variant of the same detergent, same scent and size, is the easiest to lose, shoppers barely notice.";
+        break;
+      case 'Geo Fit':
+        definition = "Whether what's physically around this branch makes this type of product more or less relevant here.";
+        example = "e.g. stores near hospitals score higher for health items, regardless of past sales.";
+        break;
+      default:
+        return null;
+    }
+    
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="font-semibold">{definition}</span>
+        <span className="text-[10px] text-text-muted">{example}</span>
+      </div>
+    );
   };
 
   const getRecommendationBadgeColor = (rec: string) => {
@@ -465,89 +520,153 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
                                       const storeDecision = getDecision(item.skuId, item.storeId) as Decision | undefined;
                                       const isReviewing = activeReview?.skuId === item.skuId && activeReview?.storeId === item.storeId;
                                       
+                                      const isScoreExpanded = expandedStoreScores.has(`${item.skuId}-${item.storeId}`);
                                       return (
-                                        <tr key={item.storeId}>
-                                          <td className="py-3 text-[13px]">{stores.get(item.storeId)?.name || item.storeId}</td>
-                                          <td className="py-3">
-                                            <span className={`inline-flex px-2 py-0.5 rounded-[4px] border text-[11px] font-semibold tracking-wide ${getRecommendationBadgeColor(item.recommendation)}`}>
-                                              {item.recommendation}
-                                            </span>
-                                          </td>
-                                          <td className="py-3 text-right text-[13px] font-medium">
-                                            {item.score !== null ? item.score.toFixed(2) : '—'}
-                                          </td>
-                                          <td className="py-3 text-right">
-                                            <span className={`text-[12px] font-medium ${item.confidence === 'HIGH' ? 'text-green-600' : item.confidence === 'LOW' ? 'text-red-600' : 'text-amber-600'}`}>
-                                              {item.confidence}
-                                            </span>
-                                          </td>
-                                          <td className="py-3 text-right">
-                                            {bucket === 'FOR_REVIEW' ? (
-                                              <div className="flex items-center justify-end gap-2">
-                                                {isReviewing ? (
-                                                  <div className="flex items-center gap-2">
-                                                    <input 
-                                                      type="text" 
-                                                      placeholder="Add a note (optional)"
-                                                      value={reviewNote}
-                                                      onChange={e => setReviewNote(e.target.value)}
-                                                      className="h-7 px-2 text-[12px] border border-border-subtle rounded-[4px] focus:outline-none focus:border-brand-500 w-[140px]"
-                                                    />
-                                                    <button 
-                                                      onClick={() => handleReviewConfirm(item.skuId, item.storeId, activeReview.action, bucket)}
-                                                      className="h-7 px-3 bg-brand-500 text-white rounded-[4px] text-[12px] font-medium"
-                                                    >
-                                                      Confirm
-                                                    </button>
-                                                    <button 
-                                                      onClick={() => { setActiveReview(null); setReviewNote(''); }}
-                                                      className="h-7 px-2 text-text-muted hover:text-text-main"
-                                                    >
-                                                      <X className="w-4 h-4" />
-                                                    </button>
-                                                  </div>
-                                                ) : storeDecision ? (
-                                                  <div className="flex items-center justify-end gap-3">
-                                                     <span className={`inline-flex px-2 py-0.5 rounded-[4px] border text-[11px] font-semibold tracking-wide ${getRecommendationBadgeColor(storeDecision.action)}`}>
-                                                       {storeDecision.action}
-                                                     </span>
-                                                     <button onClick={() => handleReviewEdit(item.skuId, item.storeId)} className="text-[12px] text-brand-600 font-medium hover:underline">
-                                                       Edit
+                                        <React.Fragment key={item.storeId}>
+                                          <tr className={`${isScoreExpanded ? 'bg-surface-hover/30' : ''}`}>
+                                            <td className="py-3 text-[13px]">{stores.get(item.storeId)?.name || item.storeId}</td>
+                                            <td className="py-3">
+                                              <span className={`inline-flex px-2 py-0.5 rounded-[4px] border text-[11px] font-semibold tracking-wide ${getRecommendationBadgeColor(item.recommendation)}`}>
+                                                {item.recommendation}
+                                              </span>
+                                            </td>
+                                            <td 
+                                              className="py-3 text-right text-[13px] font-medium cursor-pointer hover:text-brand-600 transition-colors underline decoration-dashed underline-offset-4"
+                                              onClick={() => toggleStoreScore(item.skuId, item.storeId)}
+                                            >
+                                              {item.score !== null ? item.score.toFixed(2) : '—'}
+                                            </td>
+                                            <td className="py-3 text-right">
+                                              <span className={`text-[12px] font-medium ${item.confidence === 'HIGH' ? 'text-green-600' : item.confidence === 'LOW' ? 'text-red-600' : 'text-amber-600'}`}>
+                                                {item.confidence}
+                                              </span>
+                                            </td>
+                                            <td className="py-3 text-right">
+                                              {bucket === 'FOR_REVIEW' ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                  {isReviewing ? (
+                                                    <div className="flex items-center gap-2">
+                                                      <input 
+                                                        type="text" 
+                                                        placeholder="Add a note (optional)"
+                                                        value={reviewNote}
+                                                        onChange={e => setReviewNote(e.target.value)}
+                                                        className="h-7 px-2 text-[12px] border border-border-subtle rounded-[4px] focus:outline-none focus:border-brand-500 w-[140px]"
+                                                      />
+                                                      <button 
+                                                        onClick={() => handleReviewConfirm(item.skuId, item.storeId, activeReview.action, bucket)}
+                                                        className="h-7 px-3 bg-brand-500 text-white rounded-[4px] text-[12px] font-medium"
+                                                      >
+                                                        Confirm
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => { setActiveReview(null); setReviewNote(''); }}
+                                                        className="h-7 px-2 text-text-muted hover:text-text-main"
+                                                      >
+                                                        <X className="w-4 h-4" />
+                                                      </button>
+                                                    </div>
+                                                  ) : storeDecision ? (
+                                                    <div className="flex items-center justify-end gap-3">
+                                                       <span className={`inline-flex px-2 py-0.5 rounded-[4px] border text-[11px] font-semibold tracking-wide ${getRecommendationBadgeColor(storeDecision.action)}`}>
+                                                         {storeDecision.action}
+                                                       </span>
+                                                       <button onClick={() => handleReviewEdit(item.skuId, item.storeId)} className="text-[12px] text-brand-600 font-medium hover:underline">
+                                                         Edit
+                                                       </button>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                      <button 
+                                                        onClick={() => { setActiveReview({skuId: item.skuId, storeId: item.storeId, action: 'KEEP'}); setReviewNote(''); }}
+                                                        className="h-7 px-3 rounded-[4px] border border-green-500 text-green-700 hover:bg-green-50 text-[12px] font-medium transition-colors"
+                                                      >
+                                                        Keep
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => { setActiveReview({skuId: item.skuId, storeId: item.storeId, action: 'DELIST'}); setReviewNote(''); }}
+                                                        className="h-7 px-3 rounded-[4px] border border-red-500 text-red-700 hover:bg-red-50 text-[12px] font-medium transition-colors"
+                                                      >
+                                                        Delist
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <div className="flex items-center justify-end gap-3">
+                                                  {storeDecision?.action === 'AGREE' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                                                  {storeDecision?.action === 'DISAGREE' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                                                  {!storeDecision && (
+                                                     <button 
+                                                       onClick={() => setDisagreeModal({ isOpen: true, skuId: item.skuId, storeId: item.storeId, bucket })}
+                                                       className="h-6 px-2 rounded-[4px] border border-border-subtle text-[11px] font-medium text-text-main hover:bg-surface-hover transition-colors"
+                                                     >
+                                                       Disagree
                                                      </button>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                          {isScoreExpanded && (
+                                            <tr>
+                                              <td colSpan={5} className="p-0 border-t-0 pb-3">
+                                                <div className="mt-1 mx-4 p-4 bg-surface-bg rounded-[8px] flex flex-col">
+                                                  
+                                                  {/* Sub-signals */}
+                                                  <div className="flex flex-col gap-2.5">
+                                                    {item.subSignals.map(sig => (
+                                                      <div key={sig.label} className="flex items-center gap-3">
+                                                        <div className="w-[140px] flex items-center gap-1.5">
+                                                          <span className="text-[12px] font-medium text-text-main">{sig.label}</span>
+                                                          <div className="relative group flex items-center">
+                                                            <HelpCircle className="w-3.5 h-3.5 text-text-muted hover:text-text-main cursor-help transition-colors" />
+                                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-white border border-border-subtle text-text-main text-[11px] rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 whitespace-normal">
+                                                              {getSignalTooltip(sig.label)}
+                                                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border-subtle"></div>
+                                                              <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                        <div className="flex-1 h-1.5 bg-white rounded-full overflow-hidden border border-border-subtle">
+                                                          <div style={{ width: `${sig.value * 100}%` }} className="h-full bg-brand-600" />
+                                                        </div>
+                                                        <span className="w-[40px] text-right text-[11px] text-text-muted font-medium">
+                                                          {sig.value.toFixed(2)}
+                                                        </span>
+                                                      </div>
+                                                    ))}
                                                   </div>
-                                                ) : (
-                                                  <div className="flex items-center justify-end gap-2">
-                                                    <button 
-                                                      onClick={() => { setActiveReview({skuId: item.skuId, storeId: item.storeId, action: 'KEEP'}); setReviewNote(''); }}
-                                                      className="h-7 px-3 rounded-[4px] border border-green-500 text-green-700 hover:bg-green-50 text-[12px] font-medium transition-colors"
-                                                    >
-                                                      Keep
-                                                    </button>
-                                                    <button 
-                                                      onClick={() => { setActiveReview({skuId: item.skuId, storeId: item.storeId, action: 'DELIST'}); setReviewNote(''); }}
-                                                      className="h-7 px-3 rounded-[4px] border border-red-500 text-red-700 hover:bg-red-50 text-[12px] font-medium transition-colors"
-                                                    >
-                                                      Delist
-                                                    </button>
+                                                  
+                                                  <div className="my-3 border-t border-border-subtle" />
+                                                  
+                                                  {/* Reliability */}
+                                                  <div className="flex flex-col gap-1 mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="text-[12px] font-medium text-text-main">Data Reliability: <span className="font-semibold">{Math.round(item.dataReliability)}%</span></span>
+                                                      <div className={`w-2 h-2 rounded-full ${item.dataReliability >= 90 ? 'bg-green-500' : item.dataReliability >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} />
+                                                    </div>
+                                                    {item.reliabilityNote && (
+                                                      <>
+                                                        <span className="text-[12px] text-text-muted">{item.reliabilityNote}</span>
+                                                        <span className="text-[12px] text-text-muted italic">Investigate further in Exception Dashboard</span>
+                                                      </>
+                                                    )}
                                                   </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <div className="flex items-center justify-end gap-3">
-                                                {storeDecision?.action === 'AGREE' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                                                {storeDecision?.action === 'DISAGREE' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
-                                                {!storeDecision && (
-                                                   <button 
-                                                     onClick={() => setDisagreeModal({ isOpen: true, skuId: item.skuId, storeId: item.storeId, bucket })}
-                                                     className="h-6 px-2 rounded-[4px] border border-border-subtle text-[11px] font-medium text-text-main hover:bg-surface-hover transition-colors"
-                                                   >
-                                                     Disagree
-                                                   </button>
-                                                )}
-                                              </div>
-                                            )}
-                                          </td>
-                                        </tr>
+                                                  
+                                                  {/* Confidence Reason */}
+                                                  <div className="flex items-center gap-2">
+                                                    <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold tracking-wider rounded border ${item.confidence === 'HIGH' ? 'bg-green-50 text-green-700 border-green-200' : item.confidence === 'LOW' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                                      {item.confidence}
+                                                    </span>
+                                                    <span className="text-[12px] text-text-main">{item.confidenceReason}</span>
+                                                  </div>
+                                                  
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          )}
+                                        </React.Fragment>
                                       );
                                     })}
                                   </tbody>

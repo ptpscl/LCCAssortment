@@ -88,47 +88,114 @@ const generateData = () => {
     
     // Generate SkuStoreStatus for all 12 stores
     mockStores.forEach((store, sIdx) => {
-      let rec: Recommendation = 'KEEP';
-      let score: number | null = Math.random() * 0.4 + 0.6;
+      let targetScore = 0.5;
+      let isHold = false;
       
       if (i < 30) {
         // Unanimous KEEP
-        rec = 'KEEP';
+        targetScore = 0.7 + Math.random() * 0.3;
       } else if (i < 35) {
         // Mixed
-        if (sIdx < 10) { rec = 'KEEP'; } else { rec = 'WATCH'; score = Math.random() * 0.3 + 0.3; }
+        if (sIdx < 10) { targetScore = 0.7 + Math.random() * 0.3; } else { targetScore = 0.3 + Math.random() * 0.3; }
       } else if (i < 40) {
         // WATCH
-        rec = 'WATCH';
-        score = Math.random() * 0.3 + 0.3;
+        targetScore = 0.3 + Math.random() * 0.3;
       } else if (i < 45) {
         // DELIST
-        rec = 'DELIST';
-        score = Math.random() * 0.2;
+        targetScore = Math.random() * 0.25;
       } else {
         // HOLD
-        rec = 'HOLD';
-        score = null;
+        isHold = true;
+        targetScore = 0.5;
       }
       
+      const subSignals = [
+        { label: 'Sales', weight: 0.30, value: 0 },
+        { label: 'Buyer Penetration', weight: 0.20, value: 0 },
+        { label: 'Demographic Fit', weight: 0.15, value: 0 },
+        { label: 'Loyalty Depth', weight: 0.10, value: 0 },
+        { label: 'Network', weight: 0.10, value: 0 },
+        { label: 'Uniqueness', weight: 0.10, value: 0 },
+        { label: 'Geo Fit', weight: 0.05, value: 0 }
+      ];
+
+      let calculatedScore = 0;
+      subSignals.forEach(sig => {
+        let val = targetScore + (Math.random() - 0.5) * 0.3;
+        if (Math.random() < 0.1) val = Math.random();
+        val = Math.max(0, Math.min(1, val));
+        sig.value = val;
+        calculatedScore += val * sig.weight;
+      });
+
+      let score: number | null = calculatedScore;
+      let rec: Recommendation = 'KEEP';
+
+      if (isHold) {
+        score = null;
+        rec = 'HOLD';
+      } else {
+        if (score >= 0.6) rec = 'KEEP';
+        else if (score >= 0.3) rec = 'WATCH';
+        else rec = 'DELIST';
+      }
+      
+      const conf = score && score > 0.6 ? 'HIGH' : (score ? 'MEDIUM' : 'LOW');
+      let dataReliability = 90 + Math.random() * 10;
+      let reliabilityNote: string | null = null;
+      let confidenceReason = 'All signals computed on sufficient data';
+
+      const isForReview = rec === 'WATCH' || rec === 'HOLD';
+
+      if (isForReview) {
+        if (Math.random() < 0.7) {
+          dataReliability = 60 + Math.random() * 25;
+          const anomalies = [
+            "2 anomalous transaction lines detected",
+            "Duplicate transaction IDs found",
+            "Thin sample size in recent window",
+            "Negative-value transaction lines present"
+          ];
+          reliabilityNote = anomalies[Math.floor(Math.random() * anomalies.length)];
+        } else {
+          dataReliability = 85 + Math.random() * 10;
+        }
+      } else {
+        if (Math.random() < 0.05) {
+          dataReliability = 85 + Math.random() * 5;
+          reliabilityNote = "Minor duplicate transaction IDs found";
+        } else {
+          dataReliability = 90 + Math.random() * 10;
+        }
+      }
+
+      if (conf === 'MEDIUM' || conf === 'LOW') {
+        const reasons = [
+          "Demographic Fit estimated from class average — below transaction threshold",
+          "Loyalty Depth signals are weak for this store format",
+          "Network effects estimated due to missing basket data",
+          "Geo Fit computed with stale census data"
+        ];
+        confidenceReason = reasons[Math.floor(Math.random() * reasons.length)];
+      }
+
       mockSkuStoreStatuses.push({
         skuId,
         storeId: store.id,
         recommendation: rec,
         score,
-        confidence: score && score > 0.6 ? 'HIGH' : (score ? 'MEDIUM' : 'LOW'),
-        subSignals: [
-          { label: 'Sales Velocity', weight: 0.5, value: Math.random() },
-          { label: 'Margin', weight: 0.3, value: Math.random() },
-          { label: 'Market Share', weight: 0.2, value: Math.random() }
-        ],
+        confidence: conf,
+        subSignals,
         salesWindows: {
           short8w: Array(8).fill(0).map(() => Math.floor(Math.random() * 100)),
           medium26w: Array(26).fill(0).map(() => Math.floor(Math.random() * 100)),
           yoyDelta: (Math.random() - 0.3) * 0.5
         },
         pipelineOverrideReason: null,
-        lastPublishedWeekId: '2026-W28'
+        lastPublishedWeekId: '2026-W28',
+        dataReliability,
+        reliabilityNote,
+        confidenceReason
       });
     });
   }

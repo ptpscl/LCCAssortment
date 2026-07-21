@@ -40,6 +40,9 @@ export interface SkuStoreStatus {
   };
   pipelineOverrideReason: string | null;
   lastPublishedWeekId: string;
+  dataReliability: number;
+  reliabilityNote: string | null;
+  confidenceReason: string;
 }
 
 export interface AbGenerationDraft {
