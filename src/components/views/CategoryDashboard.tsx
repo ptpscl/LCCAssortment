@@ -81,7 +81,7 @@ const LoyaltyRow = ({ scopeLevel, scopeId, title, isExpanded, onToggleExpand, ha
                     <div key={ag.label} className="flex items-center gap-3">
                       <span className="text-[12px] text-text-muted w-12 shrink-0">{ag.label}</span>
                       <div className="flex-1 h-1.5 bg-surface-bg rounded-full overflow-hidden">
-                        <div className="h-full bg-brand-400 rounded-full" style={{ width: `${ag.percent * 100}%` }}></div>
+                        <div className="h-full bg-brand-600 rounded-full" style={{ width: `${ag.percent * 100}%` }}></div>
                       </div>
                       <span className="text-[12px] font-medium text-text-main w-10 text-right">{(ag.percent * 100).toFixed(1)}%</span>
                     </div>
@@ -1064,7 +1064,7 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
                               <div className="flex justify-end gap-2 items-center">
                                 <span>{salesShare.toFixed(1)}%</span>
                                 <div className="w-12 h-1.5 bg-border-subtle rounded-full overflow-hidden">
-                                  <div className="h-full bg-brand-400" style={{ width: `${salesShare}%` }}></div>
+                                  <div className="h-full bg-brand-600" style={{ width: `${salesShare}%` }}></div>
                                 </div>
                               </div>
                             </td>
