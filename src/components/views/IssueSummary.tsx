@@ -69,44 +69,62 @@ type StoreIssue = {
 };
 
 const storeIssues: StoreIssue[] = [
-  { label: 'LCC Legazpi', category: 'SMR Large', stages: {
+  { label: 'LCC Legazpi', category: 'Supermarket Premium', stages: {
     'Stage A': { resolved: 842400, unresolved: 126360 },
     'Stage B': { resolved: 791850, unresolved: 176910 },
     'Stage C': { resolved: 755220, unresolved: 213540 },
   } },
-  { label: 'LCC Daraga', category: 'SMR Large', stages: {
+  { label: 'LCC Daraga', category: 'Supermarket Large', stages: {
     'Stage A': { resolved: 694180, unresolved: 132760 },
     'Stage B': { resolved: 641920, unresolved: 185020 },
     'Stage C': { resolved: 619410, unresolved: 207530 },
   } },
-  { label: 'LCC Tabaco', category: 'SMR Medium', stages: {
+  { label: 'LCC Tabaco', category: 'Supermarket Large', stages: {
     'Stage A': { resolved: 512640, unresolved: 112580 },
     'Stage B': { resolved: 461420, unresolved: 163800 },
     'Stage C': { resolved: 438910, unresolved: 186310 },
   } },
-  { label: 'LCC Naga', category: 'SMR Medium', stages: {
+  { label: 'LCC Naga', category: 'Supermarket Premium', stages: {
     'Stage A': { resolved: 731950, unresolved: 96840 },
     'Stage B': { resolved: 684110, unresolved: 144680 },
     'Stage C': { resolved: 659870, unresolved: 168920 },
   } },
-  { label: 'LCC Polangui', category: 'SMR Small', stages: {
+  { label: 'LCC Polangui', category: 'Supermarket Small', stages: {
     'Stage A': { resolved: 318720, unresolved: 84610 },
     'Stage B': { resolved: 283460, unresolved: 119870 },
     'Stage C': { resolved: 264190, unresolved: 139140 },
   } },
-  { label: 'LCC Express Rawis', category: 'Express', stages: {
+  { label: 'LCC Express Rawis', category: 'Express Large', stages: {
     'Stage A': { resolved: 214580, unresolved: 58720 },
     'Stage B': { resolved: 186940, unresolved: 86360 },
     'Stage C': { resolved: 171520, unresolved: 101780 },
   } },
-  { label: 'LCC Express Penaranda', category: 'Express', stages: {
+  { label: 'LCC Express Penaranda', category: 'Express Small', stages: {
     'Stage A': { resolved: 148960, unresolved: 52140 },
     'Stage B': { resolved: 126350, unresolved: 74750 },
     'Stage C': { resolved: 112480, unresolved: 88620 },
   } },
+  { label: 'LCC Market Savers', category: 'Market Savers', stages: {
+    'Stage A': { resolved: 176820, unresolved: 46380 },
+    'Stage B': { resolved: 154410, unresolved: 68790 },
+    'Stage C': { resolved: 143260, unresolved: 79940 },
+  } },
+  { label: 'LCC BRD Legazpi', category: 'Bake & Resto Depot', stages: {
+    'Stage A': { resolved: 98420, unresolved: 21860 },
+    'Stage B': { resolved: 87610, unresolved: 32670 },
+    'Stage C': { resolved: 81950, unresolved: 38330 },
+  } },
 ];
 
-const storeCategories = Array.from(new Set(storeIssues.map(row => row.category)));
+const storeCategories = [
+  'Supermarket Premium',
+  'Supermarket Large',
+  'Supermarket Small',
+  'Express Large',
+  'Express Small',
+  'Market Savers',
+  'Bake & Resto Depot',
+];
 
 const stageDescriptions: Record<StageKey, string> = {
   'Stage A': 'Customer DB + Loyalty',
@@ -166,6 +184,10 @@ export default function IssueSummary() {
       }),
       { resolved: 0, unresolved: 0 }
     ),
+    [issueBreakdown]
+  );
+  const maxIssueVolume = useMemo(
+    () => Math.max(...issueBreakdown.map(row => row.resolved + row.unresolved), 1),
     [issueBreakdown]
   );
 
@@ -365,16 +387,21 @@ export default function IssueSummary() {
               const total = row.resolved + row.unresolved;
               const resolvedPct = total ? (row.resolved / total) * 100 : 0;
               const unresolvedPct = 100 - resolvedPct;
+              const volumePct = (total / maxIssueVolume) * 72;
               return (
-                <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_150px] gap-2 md:gap-4 md:items-center">
-                  <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
-                  <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
-                    <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
-                    <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
+                <div key={row.label} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[13px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
+                    <span className="text-[12px] text-text-muted whitespace-nowrap">
+                      {unresolvedPct.toFixed(1)}% open ({formatCount(row.unresolved)})
+                    </span>
                   </div>
-                  <span className="text-[12px] text-text-muted md:text-right">
-                    {unresolvedPct.toFixed(1)}% open ({formatCount(row.unresolved)})
-                  </span>
+                  <div className="h-5 overflow-hidden rounded-full bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
+                    <div className="h-full flex overflow-hidden rounded-full transition-all duration-500" style={{ width: `${volumePct}%` }}>
+                      <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
+                      <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
+                    </div>
+                  </div>
                 </div>
               );
             })()
