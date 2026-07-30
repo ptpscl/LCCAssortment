@@ -132,112 +132,109 @@ export default function IssueSummary() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 md:p-8">
-        <div className="max-w-4xl">
-          <h2 className="text-[30px] md:text-[34px] font-bold leading-tight text-brand-700">
-            Issue Dashboard
-          </h2>
+      <div className="flex bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5 w-max">
+        {stages.map(stage => (
+          <button
+            key={stage}
+            onClick={() => setActiveStage(stage)}
+            className={`h-8 px-6 text-[12px] font-medium transition-all rounded-[4px] ${
+              activeStage === stage ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-text-muted hover:text-text-main'
+            }`}
+          >
+            {stage}
+          </button>
+        ))}
+      </div>
 
-          <div className="mt-4">
-            <label className="text-[16px] md:text-[18px] font-semibold text-text-main">
-              Time From - Time To
-            </label>
-            <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                type="date"
-                value={timeFrom}
-                onChange={e => setTimeFrom(e.target.value)}
-                className="h-10 px-3 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all w-full sm:w-[180px]"
-              />
-              <span className="text-[14px] text-text-muted font-medium">to</span>
-              <input
-                type="date"
-                value={timeTo}
-                onChange={e => setTimeTo(e.target.value)}
-                className="h-10 px-3 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all w-full sm:w-[180px]"
-              />
+      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col">
+        <div className="flex flex-row justify-between items-center p-4">
+          <div className="flex flex-row items-center gap-6">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Date Range</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={timeFrom}
+                  onChange={e => setTimeFrom(e.target.value)}
+                  className="h-9 px-3 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all"
+                />
+                <span className="text-[13px] text-text-muted font-medium">to</span>
+                <input
+                  type="date"
+                  value={timeTo}
+                  onChange={e => setTimeTo(e.target.value)}
+                  className="h-9 px-3 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6">
-            <h3 className="text-[18px] md:text-[20px] font-semibold text-text-main leading-snug">
-              Category Breakdown and contributions? (qty/margin/sales)
-            </h3>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {stages.map(stage => {
-            const isActive = activeStage === stage;
-            return (
-              <button
-                key={stage}
-                onClick={() => setActiveStage(stage)}
-                className={`h-10 px-4 rounded-[8px] border text-[13px] font-semibold transition-all ${
-                  isActive
-                    ? 'bg-brand-50 border-brand-200 text-brand-700 shadow-sm'
-                    : 'bg-white border-border-subtle text-text-muted hover:text-text-main hover:bg-surface-bg'
-                }`}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Stage Scope</label>
+              <select
+                value={activeStage}
+                onChange={e => setActiveStage(e.target.value as StageKey)}
+                className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
               >
-                {stage}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-5 rounded-[10px] border border-border-subtle overflow-hidden bg-white">
-          <div className="px-5 py-4 border-b border-border-subtle bg-surface-bg">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className={`px-3 py-1.5 rounded-[6px] ${stageBadge[activeStage]} text-white text-[12px] font-bold tracking-wide`}>
-                {activeStage}
-              </div>
-              <div className="text-[13px] text-text-muted font-medium">
-                relational flags + dataset anomalies
-              </div>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            {renderTable()}
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-[10px] border border-border-subtle bg-surface-bg p-5">
-            <h4 className="text-[16px] font-semibold text-text-main mb-3">
-              {activeStage} Anomalies
-            </h4>
-            <div className="space-y-2 text-[14px] md:text-[16px] font-medium text-text-muted">
-              {activeFlags.map((flag, index) => (
-                <div key={flag} className="pl-4">
-                  {index + 1}. {flag}
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 border-t border-border-subtle pt-4">
-              <h5 className="text-[12px] font-semibold uppercase tracking-wider text-text-muted mb-2">
-                Dataset Only Anomalies
-              </h5>
-              <div className="space-y-2 text-[13px] text-text-muted">
-                {activeAnomalies.map(tag => (
-                  <div key={tag} className="rounded-[6px] bg-white border border-border-subtle px-3 py-2">
-                    {tag}
-                  </div>
+                {stages.map(stage => (
+                  <option key={stage} value={stage}>
+                    {stage}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-[10px] border border-border-subtle bg-white p-5 shadow-subtle">
-            <h4 className="text-[16px] font-semibold text-text-main mb-3">
-              Summary
-            </h4>
-            <div className="space-y-3 text-[13px] text-text-muted">
-              <p>Stage-based dummy dashboard.</p>
-              <p>Stage A = Customer DB + Loyalty.</p>
-              <p>Stage B = Stage A + MMS Sales.</p>
-              <p>Stage C = Stage B + SKU Hierarchy.</p>
-              <p>Use these stage layers if you want the exception dashboard to stay compact.</p>
-            </div>
+        <div className="border-b border-border-subtle w-full" />
+
+        <div className="p-4 pt-5 flex items-center gap-4">
+          <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Stage View</label>
+          <div className="flex bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5">
+            <button className="h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] bg-white text-text-main shadow-sm border border-border-subtle">
+              Relational
+            </button>
+            <button className="h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] text-text-muted hover:text-text-main">
+              Dataset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col overflow-hidden">
+        <div className="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-surface-bg">
+          <div className="flex items-center gap-3">
+            <h3 className="text-[16px] font-semibold text-text-main">{activeStage}</h3>
+            <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold tracking-wider rounded border text-white ${stageBadge[activeStage]}`}>
+              RELATIONAL FLAGS + DATASET ANOMALIES
+            </span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          {renderTable()}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
+          <h3 className="text-[16px] font-semibold text-text-main mb-4">{activeStage} Flags</h3>
+          <div className="space-y-3">
+            {activeFlags.map((flag, index) => (
+              <div key={flag} className="flex items-center justify-between text-[13px]">
+                <span className="text-text-main font-medium">{index + 1}. {flag}</span>
+                <span className="text-text-muted">Relational</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
+          <h3 className="text-[16px] font-semibold text-text-main mb-4">Dataset Anomalies</h3>
+          <div className="space-y-3">
+            {activeAnomalies.map(tag => (
+              <div key={tag} className="rounded-[8px] border border-border-subtle bg-surface-bg px-4 py-3 text-[13px] text-text-main font-medium">
+                {tag}
+              </div>
+            ))}
           </div>
         </div>
       </div>
