@@ -55,13 +55,53 @@ const stageBadge: Record<StageKey, string> = {
   'Stage C': 'bg-[#2F7D32]',
 };
 
+const categorizationIssues = [
+  { label: 'Supermarket Premium', unresolved: 18, resolved: 82 },
+  { label: 'Supermarket Large', unresolved: 24, resolved: 76 },
+  { label: 'Supermarket Small', unresolved: 31, resolved: 69 },
+  { label: 'Express Large', unresolved: 27, resolved: 73 },
+  { label: 'Express Small', unresolved: 36, resolved: 64 },
+  { label: 'Market Savers', unresolved: 22, resolved: 78 },
+  { label: 'Bake & Resto Depot', unresolved: 29, resolved: 71 },
+];
+
+const storeIssues = [
+  { label: 'LCC Legazpi', category: 'Supermarket Premium', unresolved: 16, resolved: 84 },
+  { label: 'LCC Daraga', category: 'Supermarket Large', unresolved: 23, resolved: 77 },
+  { label: 'LCC Tabaco', category: 'Supermarket Large', unresolved: 28, resolved: 72 },
+  { label: 'LCC Naga', category: 'Supermarket Premium', unresolved: 19, resolved: 81 },
+  { label: 'LCC Polangui', category: 'Supermarket Small', unresolved: 34, resolved: 66 },
+  { label: 'LCC Express Rawis', category: 'Express Large', unresolved: 27, resolved: 73 },
+  { label: 'LCC Express Penaranda', category: 'Express Small', unresolved: 38, resolved: 62 },
+];
+
 export default function IssueSummary() {
   const [timeFrom, setTimeFrom] = useState('');
   const [timeTo, setTimeTo] = useState('');
   const [activeStage, setActiveStage] = useState<StageKey>('Stage A');
+  const [storeCategorization, setStoreCategorization] = useState('All');
+  const [store, setStore] = useState('All');
+  const [groupBy, setGroupBy] = useState<'categorization' | 'store'>('categorization');
 
   const activeFlags = useMemo(() => stageFlags[activeStage], [activeStage]);
   const activeAnomalies = useMemo(() => stageAnomalies[activeStage], [activeStage]);
+  const issueBreakdown = useMemo(() => {
+    if (groupBy === 'categorization') {
+      return storeCategorization === 'All'
+        ? categorizationIssues
+        : categorizationIssues.filter(row => row.label === storeCategorization);
+    }
+
+    return storeIssues.filter(row =>
+      (storeCategorization === 'All' || row.category === storeCategorization) &&
+      (store === 'All' || row.label === store)
+    );
+  }, [groupBy, store, storeCategorization]);
+
+  const availableStores = useMemo(
+    () => storeIssues.filter(row => storeCategorization === 'All' || row.category === storeCategorization),
+    [storeCategorization]
+  );
 
   const renderTable = () => {
     if (activeStage === 'Stage A') {
@@ -169,6 +209,45 @@ export default function IssueSummary() {
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Store Categorization</label>
+              <select
+                value={storeCategorization}
+                onChange={e => {
+                  setStoreCategorization(e.target.value);
+                  setStore('All');
+                }}
+                className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
+              >
+                <option value="All">All Stores</option>
+                <optgroup label="LCC Supermarket">
+                  <option value="Supermarket Premium">Premium</option>
+                  <option value="Supermarket Large">Large</option>
+                  <option value="Supermarket Small">Small</option>
+                </optgroup>
+                <optgroup label="Express Mart">
+                  <option value="Express Large">Large</option>
+                  <option value="Express Small">Small</option>
+                </optgroup>
+                <option value="Market Savers">Market Savers</option>
+                <option value="Bake & Resto Depot">Bake & Resto Depot (BRD)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Store</label>
+              <select
+                value={store}
+                onChange={e => setStore(e.target.value)}
+                className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
+              >
+                <option value="All">All Stores</option>
+                {availableStores.map(row => (
+                  <option key={row.label} value={row.label}>{row.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
               <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Stage Scope</label>
               <select
                 value={activeStage}
@@ -188,15 +267,51 @@ export default function IssueSummary() {
         <div className="border-b border-border-subtle w-full" />
 
         <div className="p-4 pt-5 flex items-center gap-4">
-          <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Stage View</label>
+          <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Group By</label>
           <div className="flex bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5">
-            <button className="h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] bg-white text-text-main shadow-sm border border-border-subtle">
-              Relational
+            <button
+              onClick={() => setGroupBy('categorization')}
+              className={`h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] ${groupBy === 'categorization' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+            >
+              Categorization
             </button>
-            <button className="h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] text-text-muted hover:text-text-main">
-              Dataset
+            <button
+              onClick={() => setGroupBy('store')}
+              className={`h-8 px-4 text-[12px] font-medium transition-all rounded-[4px] ${groupBy === 'store' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+            >
+              Store
             </button>
           </div>
+          <div className="text-[12px] text-text-muted">
+            {groupBy === 'categorization' ? 'Grouped by store categorization' : 'Grouped by store'}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+          <div>
+            <h3 className="text-[16px] font-semibold text-text-main">Transaction Level Issues</h3>
+            <p className="text-[12px] text-text-muted mt-1">
+              Per {groupBy === 'categorization' ? 'Store Categorization' : 'Store'} · {activeStage}
+            </p>
+          </div>
+          <div className="flex items-center gap-5 text-[12px] text-text-muted">
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#A9B7FF]" />Unresolved</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#FF3347]" />Resolved + Clean</span>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {issueBreakdown.map(row => (
+            <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_88px] gap-2 md:gap-4 md:items-center">
+              <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
+              <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg">
+                <div className="bg-[#A9B7FF] transition-all duration-500" style={{ width: `${row.unresolved}%` }} />
+                <div className="bg-[#FF3347] transition-all duration-500" style={{ width: `${row.resolved}%` }} />
+              </div>
+              <span className="text-[12px] text-text-muted md:text-right">{row.unresolved}% open</span>
+            </div>
+          ))}
         </div>
       </div>
 
