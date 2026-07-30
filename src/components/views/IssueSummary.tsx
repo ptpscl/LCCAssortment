@@ -274,16 +274,17 @@ export default function IssueSummary() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5 w-max">
+      <div className="grid grid-cols-1 sm:grid-cols-3 bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5 w-full xl:w-max">
         {stages.map(stage => (
           <button
             key={stage}
             onClick={() => setActiveStage(stage)}
-            className={`h-8 px-6 text-[12px] font-medium transition-all rounded-[4px] ${
+            className={`h-9 px-5 text-[12px] font-medium text-left sm:text-center whitespace-nowrap transition-all rounded-[4px] ${
               activeStage === stage ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-text-muted hover:text-text-main'
             }`}
           >
-            {stage}
+            <span className="font-semibold">{stage}</span>
+            <span className="ml-1.5 opacity-75">· {stageDescriptions[stage]}</span>
           </button>
         ))}
       </div>
@@ -350,7 +351,7 @@ export default function IssueSummary() {
               >
                 {stages.map(stage => (
                   <option key={stage} value={stage}>
-                    {stage}
+                    {stage} - {stageDescriptions[stage]}
                   </option>
                 ))}
               </select>
