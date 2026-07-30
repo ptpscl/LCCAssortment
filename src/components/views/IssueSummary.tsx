@@ -174,10 +174,6 @@ export default function IssueSummary() {
     ),
     [issueBreakdown]
   );
-  const maxIssueVolume = useMemo(
-    () => Math.max(...issueBreakdown.map(row => row.resolved + row.unresolved), 1),
-    [issueBreakdown]
-  );
 
   const renderTable = () => {
     if (activeStage === 'Stage A') {
@@ -375,7 +371,6 @@ export default function IssueSummary() {
               const total = row.resolved + row.unresolved;
               const resolvedPct = total ? (row.resolved / total) * 100 : 0;
               const unresolvedPct = 100 - resolvedPct;
-              const volumePct = (total / maxIssueVolume) * 72;
               return (
                 <div key={row.label} className="flex flex-col gap-1">
                   <div className="flex items-center justify-between gap-4">
@@ -385,7 +380,7 @@ export default function IssueSummary() {
                     </span>
                   </div>
                   <div className="h-4 overflow-hidden rounded-full bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
-                    <div className="h-full flex overflow-hidden rounded-full transition-all duration-500" style={{ width: `${volumePct}%` }}>
+                    <div className="h-full w-full flex overflow-hidden rounded-full">
                       <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
                       <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
                     </div>
