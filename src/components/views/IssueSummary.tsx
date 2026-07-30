@@ -380,7 +380,7 @@ export default function IssueSummary() {
           </div>
           <div className="flex items-center gap-5 text-[12px] text-text-muted">
             <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-brand-600" />Resolved + Clean</span>
-            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#AEC6CF]" />Unresolved</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-brand-50 border border-border-subtle" />Unresolved</span>
           </div>
         </div>
         <div className="space-y-4">
@@ -400,7 +400,7 @@ export default function IssueSummary() {
                   <div className="h-4 overflow-hidden rounded-full bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
                     <div className="h-full w-full flex overflow-hidden rounded-full">
                       <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
-                      <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
+                      <div className="bg-brand-50 transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
                     </div>
                   </div>
                 </div>
