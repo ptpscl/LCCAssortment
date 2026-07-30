@@ -377,14 +377,14 @@ export default function IssueSummary() {
               const unresolvedPct = 100 - resolvedPct;
               const volumePct = (total / maxIssueVolume) * 72;
               return (
-                <div key={row.label} className="flex flex-col gap-2">
+                <div key={row.label} className="flex flex-col gap-1">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-[13px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
                     <span className="text-[12px] text-text-muted whitespace-nowrap">
                       {unresolvedPct.toFixed(1)}% open ({formatCount(row.unresolved)})
                     </span>
                   </div>
-                  <div className="h-5 overflow-hidden rounded-full bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
+                  <div className="h-4 overflow-hidden rounded-full bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
                     <div className="h-full flex overflow-hidden rounded-full transition-all duration-500" style={{ width: `${volumePct}%` }}>
                       <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
                       <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
