@@ -104,16 +104,6 @@ const storeIssues: StoreIssue[] = [
     'Stage B': { resolved: 126350, unresolved: 74750 },
     'Stage C': { resolved: 112480, unresolved: 88620 },
   } },
-  { label: 'LCC Market Savers', category: 'Market Savers', stages: {
-    'Stage A': { resolved: 176820, unresolved: 46380 },
-    'Stage B': { resolved: 154410, unresolved: 68790 },
-    'Stage C': { resolved: 143260, unresolved: 79940 },
-  } },
-  { label: 'LCC BRD Legazpi', category: 'Bake & Resto Depot', stages: {
-    'Stage A': { resolved: 98420, unresolved: 21860 },
-    'Stage B': { resolved: 87610, unresolved: 32670 },
-    'Stage C': { resolved: 81950, unresolved: 38330 },
-  } },
 ];
 
 const storeCategories = [
@@ -122,8 +112,6 @@ const storeCategories = [
   'Supermarket Small',
   'Express Large',
   'Express Small',
-  'Market Savers',
-  'Bake & Resto Depot',
 ];
 
 const stageDescriptions: Record<StageKey, string> = {
