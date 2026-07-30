@@ -355,8 +355,8 @@ export default function IssueSummary() {
             </p>
           </div>
           <div className="flex items-center gap-5 text-[12px] text-text-muted">
-            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-success" />Resolved + Clean</span>
-            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-error" />Unresolved</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-brand-600" />Resolved + Clean</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#AEC6CF]" />Unresolved</span>
           </div>
         </div>
         <div className="space-y-4">
@@ -369,8 +369,8 @@ export default function IssueSummary() {
                 <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_150px] gap-2 md:gap-4 md:items-center">
                   <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
                   <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
-                    <div className="bg-success transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
-                    <div className="bg-error transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
+                    <div className="bg-brand-600 transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
+                    <div className="bg-[#AEC6CF] transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
                   </div>
                   <span className="text-[12px] text-text-muted md:text-right">
                     {unresolvedPct.toFixed(1)}% open ({formatCount(row.unresolved)})
@@ -382,8 +382,8 @@ export default function IssueSummary() {
         </div>
         <div className="mt-5 pt-4 border-t border-border-subtle flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-text-muted">
           <span>Total: <strong className="text-text-main">{formatCount(issueTotals.resolved + issueTotals.unresolved)}</strong></span>
-          <span>Resolved: <strong className="text-success">{formatCount(issueTotals.resolved)}</strong></span>
-          <span>Unresolved: <strong className="text-error">{formatCount(issueTotals.unresolved)}</strong></span>
+          <span>Resolved: <strong className="text-brand-600">{formatCount(issueTotals.resolved)}</strong></span>
+          <span>Unresolved: <strong className="text-text-muted">{formatCount(issueTotals.unresolved)}</strong></span>
         </div>
       </div>
 
