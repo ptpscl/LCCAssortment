@@ -120,10 +120,24 @@ const stageDescriptions: Record<StageKey, string> = {
   'Stage C': 'Stage B + SKU Hierarchy',
 };
 
+const stageFlagWeights: Record<StageKey, number[]> = {
+  'Stage A': [86, 9, 3, 2],
+  'Stage B': [4, 3, 10, 5, 12, 52, 6, 5, 3],
+  'Stage C': [88, 8, 4],
+};
+
 const formatCount = (value: number) => new Intl.NumberFormat('en', {
   notation: 'compact',
   maximumFractionDigits: 1,
 }).format(value);
+
+function distributeCounts(labels: string[], total: number, weights: number[]) {
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  return labels.map((label, index) => ({
+    label,
+    count: Math.round(total * (weights[index] ?? 1) / weightTotal),
+  }));
+}
 
 export default function IssueSummary() {
   const [timeFrom, setTimeFrom] = useState('');
@@ -173,6 +187,22 @@ export default function IssueSummary() {
       { resolved: 0, unresolved: 0 }
     ),
     [issueBreakdown]
+  );
+  const flagBreakdown = useMemo(
+    () => distributeCounts(
+      activeFlags,
+      issueTotals.resolved + issueTotals.unresolved,
+      stageFlagWeights[activeStage]
+    ),
+    [activeFlags, activeStage, issueTotals]
+  );
+  const anomalyBreakdown = useMemo(
+    () => distributeCounts(
+      activeAnomalies,
+      issueTotals.unresolved,
+      activeAnomalies.map((_, index) => activeAnomalies.length - index)
+    ),
+    [activeAnomalies, issueTotals.unresolved]
   );
 
   const renderTable = () => {
@@ -352,6 +382,7 @@ export default function IssueSummary() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
           <div>
@@ -398,6 +429,40 @@ export default function IssueSummary() {
       </div>
 
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col overflow-hidden">
+        <div className="px-6 py-5 border-b border-border-subtle bg-surface-bg">
+          <h3 className="text-[16px] font-semibold text-text-main">Relational Flags + Dataset Anomalies</h3>
+          <p className="text-[12px] text-text-muted mt-1">
+            {store !== 'All' ? store : storeCategorization !== 'All' ? storeCategorization : 'All store categorizations'} · {activeStage}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 flex-1 min-h-0">
+          <div className="p-5 sm:border-r border-border-subtle">
+            <h4 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">Relational Flags</h4>
+            <div className="space-y-2.5 max-h-[270px] overflow-y-auto pr-1">
+              {flagBreakdown.map(row => (
+                <div key={row.label} className="flex items-center justify-between gap-3 text-[12px]">
+                  <span className="text-text-main font-medium truncate" title={row.label}>{row.label}</span>
+                  <span className="text-text-muted tabular-nums whitespace-nowrap">{formatCount(row.count)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="p-5 border-t sm:border-t-0 border-border-subtle">
+            <h4 className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">Dataset Anomalies</h4>
+            <div className="space-y-2.5 max-h-[270px] overflow-y-auto pr-1">
+              {anomalyBreakdown.map(row => (
+                <div key={row.label} className="flex items-center justify-between gap-3 text-[12px]">
+                  <span className="text-text-main font-medium truncate" title={row.label}>{row.label}</span>
+                  <span className="text-text-muted tabular-nums whitespace-nowrap">{formatCount(row.count)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col overflow-hidden">
         <div className="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-surface-bg">
           <div className="flex items-center gap-3">
             <h3 className="text-[16px] font-semibold text-text-main">{activeStage}</h3>
@@ -411,30 +476,6 @@ export default function IssueSummary() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
-          <h3 className="text-[16px] font-semibold text-text-main mb-4">{activeStage} Flags</h3>
-          <div className="space-y-3">
-            {activeFlags.map((flag, index) => (
-              <div key={flag} className="flex items-center justify-between text-[13px]">
-                <span className="text-text-main font-medium">{index + 1}. {flag}</span>
-                <span className="text-text-muted">Relational</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col">
-          <h3 className="text-[16px] font-semibold text-text-main mb-4">Dataset Anomalies</h3>
-          <div className="space-y-3">
-            {activeAnomalies.map(tag => (
-              <div key={tag} className="rounded-[8px] border border-border-subtle bg-surface-bg px-4 py-3 text-[13px] text-text-main font-medium">
-                {tag}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
