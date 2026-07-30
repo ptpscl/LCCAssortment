@@ -350,6 +350,13 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
     }
   };
 
+  const handleSaveAndExit = () => {
+    showToast('Progress saved. You can resume this draft anytime.');
+    setTimeout(() => {
+      if (onViewChange) onViewChange('review-queue');
+    }, 1500);
+  };
+
   const handleDiscardConfirm = async () => {
     if (!draft) return;
     setIsDiscarding(true);
@@ -857,6 +864,12 @@ export default function AbSandboxScreen({ onViewChange }: Props) {
               className="h-9 px-4 bg-white border border-border-subtle text-text-main rounded-[6px] font-medium text-[13px] shadow-sm hover:bg-surface-hover/50 transition-colors"
             >
               Discard draft
+            </button>
+            <button 
+              onClick={handleSaveAndExit}
+              className="h-9 px-4 bg-white border border-border-subtle text-text-main rounded-[6px] font-medium text-[13px] shadow-sm hover:bg-surface-hover/50 transition-colors"
+            >
+              Save & Exit
             </button>
             <button 
               onClick={() => setShowPublishModal(true)}

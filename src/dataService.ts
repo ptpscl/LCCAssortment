@@ -1,12 +1,12 @@
 import { 
   DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, 
   SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, 
-  AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary, AssortmentTrackerRow
+  AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary, AssortmentTrackerRow, CategoryPerformancePeriod, Cadence, ExceptionStatus, ExceptionRecord, ScopeLevel, LoyaltyProfile, BrandRollup
 } from './types';
 import { 
   mockDivisions, mockDepartments, mockCategories, mockClasses, mockStores, mockSkus, 
   mockSkuStoreStatuses, mockAbGenerationDrafts, mockDecisions, mockAbArchives, 
-  mockSnapshots, mockWeeklySnapshots, mockExecutiveSummary 
+  mockSnapshots, mockWeeklySnapshots, mockExecutiveSummary, mockCategoryPerformance, mockExceptions, mockLoyaltyProfiles, mockBrandRollups 
 } from './mockData';
 
 // Delay helper to simulate network latency
@@ -81,6 +81,12 @@ export const dataService = {
   getDraft: async (generationId: string): Promise<AbGenerationDraft | undefined> => {
     await delay(300);
     return mockAbGenerationDrafts.find(d => d.generationId === generationId);
+  },
+
+  getDraftByCategory: async (categoryId: string): Promise<AbGenerationDraft | undefined> => {
+    await delay(300);
+    // Find the latest DRAFT for this category
+    return mockAbGenerationDrafts.find(d => d.categoryId === categoryId && d.status === 'DRAFT');
   },
 
   saveGenerationDecision: async (decision: Decision): Promise<void> => {
@@ -350,5 +356,77 @@ export const dataService = {
       assortmentComposition,
       dataReliability
     };
+  },
+
+  getCategoryPerformance: async (categoryId: string, cadence: Cadence, classId?: string | null): Promise<CategoryPerformancePeriod[]> => {
+    await delay(300);
+    return mockCategoryPerformance.filter(p => p.categoryId === categoryId && p.cadence === cadence && p.classId === (classId || null));
+  },
+
+  getExceptionCounts: async (categoryId: string): Promise<{ clean: number; forResolution: number; resolved: number }> => {
+    await delay(200);
+    const exceptions = mockExceptions.filter(e => e.categoryId === categoryId);
+    return {
+      clean: exceptions.filter(e => e.status === 'CLEAN').length,
+      forResolution: exceptions.filter(e => e.status === 'FOR_RESOLUTION').length,
+      resolved: exceptions.filter(e => e.status === 'RESOLVED').length
+    };
+  },
+
+  
+  getPortfolioRollup: async (): Promise<any[]> => {
+    // delay to simulate api
+    await new Promise(r => setTimeout(r, 600));
+    
+    // Create mock data
+    const divisions = await dataService.getDivisions();
+    const departments = await dataService.getDepartments();
+    
+    return divisions.map(div => {
+      const divDeps = departments.filter(d => d.divisionId === div.id);
+      
+      const childrenDeps = divDeps.map(dep => {
+        const catCount = 3;
+        const categories = Array.from({length: catCount}).map((_, i) => ({
+          type: 'CATEGORY',
+          id: `${dep.id}-cat-${i}`,
+          name: i === 0 && dep.name === 'Dairy' ? 'Milk & Cream' : `Category ${i+1} (${dep.name})`,
+          qty: Math.floor(Math.random() * 50000) + 10000,
+          margin: Math.floor(Math.random() * 20000) + 5000,
+          sales: Math.floor(Math.random() * 100000) + 20000,
+        }));
+        
+        return {
+          type: 'DEPARTMENT',
+          id: dep.id,
+          name: dep.name,
+          qty: categories.reduce((sum, c) => sum + c.qty, 0),
+          margin: categories.reduce((sum, c) => sum + c.margin, 0),
+          sales: categories.reduce((sum, c) => sum + c.sales, 0),
+          children: categories
+        };
+      });
+      
+      return {
+        type: 'DIVISION',
+        id: div.id,
+        name: div.name,
+        qty: childrenDeps.reduce((sum, d) => sum + d.qty, 0),
+        margin: childrenDeps.reduce((sum, d) => sum + d.margin, 0),
+        sales: childrenDeps.reduce((sum, d) => sum + d.sales, 0),
+        children: childrenDeps
+      };
+    });
+  },
+
+  getLoyaltyProfile: async (scopeLevel: ScopeLevel, scopeId: string): Promise<LoyaltyProfile | null> => {
+    await delay(200);
+    return mockLoyaltyProfiles.find(p => p.scopeLevel === scopeLevel && p.scopeId === scopeId) || null;
+  },
+
+  getBrandRollups: async (categoryId: string): Promise<BrandRollup[]> => {
+    await delay(300);
+    const classIds = mockClasses.filter(c => c.categoryId === categoryId).map(c => c.id);
+    return mockBrandRollups.filter(b => classIds.includes(b.classId));
   }
 };

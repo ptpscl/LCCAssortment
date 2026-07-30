@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { dataService } from '../../dataService';
-import { CategoryRecord, DepartmentRecord, DivisionRecord, ClassRecord, SkuStoreStatus, AbArchiveSnapshot } from '../../types';
+import { CategoryRecord, DepartmentRecord, DivisionRecord, ClassRecord, SkuStoreStatus, AbArchiveSnapshot, AbGenerationDraft } from '../../types';
 import { Loader2 } from 'lucide-react';
 
 interface Props {
@@ -10,12 +10,14 @@ interface Props {
 export default function QueueScreen({ onViewChange }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
   const [category, setCategory] = useState<CategoryRecord | null>(null);
   const [department, setDepartment] = useState<DepartmentRecord | null>(null);
   const [division, setDivision] = useState<DivisionRecord | null>(null);
   const [classes, setClasses] = useState<ClassRecord[]>([]);
   const [liveStatuses, setLiveStatuses] = useState<SkuStoreStatus[]>([]);
   const [archives, setArchives] = useState<AbArchiveSnapshot[]>([]);
+  const [existingDraft, setExistingDraft] = useState<AbGenerationDraft | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -42,6 +44,9 @@ export default function QueueScreen({ onViewChange }: Props) {
 
         const arch = await dataService.getAbArchives();
         setArchives(arch);
+
+        const draft = await dataService.getDraftByCategory(cat.id);
+        setExistingDraft(draft || null);
       }
       setIsLoading(false);
     }
@@ -54,6 +59,18 @@ export default function QueueScreen({ onViewChange }: Props) {
     await dataService.startGeneration(category.id);
     setIsGenerating(false);
     onViewChange('ab-sandbox');
+  };
+
+  const handleResume = () => {
+    onViewChange('ab-sandbox');
+  };
+
+  const handleDiscardDraft = async () => {
+    if (!existingDraft) return;
+    setIsDiscarding(true);
+    await dataService.discardGeneration(existingDraft.generationId);
+    setExistingDraft(null);
+    setIsDiscarding(false);
   };
 
   const latestPublishedWeek = useMemo(() => {
@@ -115,52 +132,83 @@ export default function QueueScreen({ onViewChange }: Props) {
 
       {/* AB Status Banner */}
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[16px] font-semibold text-text-main flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${isLoading ? 'bg-gray-300 animate-pulse' : 'bg-green-500'}`}></span>
-              Live AB as of {isLoading ? '...' : (latestPublishedWeek ? formatWeek(latestPublishedWeek) : 'Unknown')}
+        {existingDraft ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[16px] font-semibold text-text-main">
+                You have an unfinished AB draft for {formatWeek(existingDraft.weekId)}
+              </div>
+              <div className="text-[13px] text-text-muted mt-1">
+                Started {new Date(existingDraft.createdAt).toLocaleDateString()}
+                {' · '}{existingDraft.items.filter(i => i.recommendation !== 'HOLD').length} items in review
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleDiscardDraft}
+                disabled={isDiscarding}
+                className="text-[13px] font-medium text-text-muted hover:text-red-600 transition-colors disabled:opacity-50"
+              >
+                Discard and start over
+              </button>
+              <button
+                onClick={handleResume}
+                className="h-10 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-[6px] font-medium text-[14px] shadow-sm transition-colors flex items-center gap-2"
+              >
+                Resume Draft
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {isLoading ? (
-              <button
-                disabled
-                className="h-10 px-4 bg-brand-600 text-white rounded-[6px] font-medium text-[14px] shadow-sm opacity-50 cursor-not-allowed flex items-center gap-2"
-              >
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generate AB
-              </button>
-            ) : hasNewerScores ? (
-              <>
-                <span className="text-[14px] font-medium text-brand-600">
-                  New scores available: {formatWeek(newScoresAvailableWeek)}
-                </span>
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !category}
-                  className="h-10 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[14px] shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isGenerating && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Generate AB
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="text-[14px] text-text-muted">You're up to date</span>
-                <button
-                  onClick={() => onViewChange('ab-edit')}
-                  className="h-10 px-4 bg-white border border-border-subtle text-text-main hover:bg-surface-bg rounded-[6px] font-medium text-[14px] shadow-sm transition-colors"
-                >
-                  Edit AB
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="mt-3 text-[12px] text-text-muted">
-          If you don't generate this week, last week's AB stays live — nothing changes automatically.
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[16px] font-semibold text-text-main flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${isLoading ? 'bg-gray-300 animate-pulse' : 'bg-green-500'}`}></span>
+                  Live AB as of {isLoading ? '...' : (latestPublishedWeek ? formatWeek(latestPublishedWeek) : 'Unknown')}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                {isLoading ? (
+                  <button
+                    disabled
+                    className="h-10 px-4 bg-brand-600 text-white rounded-[6px] font-medium text-[14px] shadow-sm opacity-50 cursor-not-allowed flex items-center gap-2"
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generate AB
+                  </button>
+                ) : hasNewerScores ? (
+                  <>
+                    <span className="text-[14px] font-medium text-brand-600">
+                      New scores available: {formatWeek(newScoresAvailableWeek)}
+                    </span>
+                    <button
+                      onClick={handleGenerate}
+                      disabled={isGenerating || !category}
+                      className="h-10 px-4 bg-brand-600 hover:bg-brand-700 text-white hover:text-white rounded-[6px] font-medium text-[14px] shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isGenerating && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Generate AB
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[14px] text-text-muted">You're up to date</span>
+                    <button
+                      onClick={() => onViewChange('ab-edit')}
+                      className="h-10 px-4 bg-white border border-border-subtle text-text-main hover:bg-surface-bg rounded-[6px] font-medium text-[14px] shadow-sm transition-colors"
+                    >
+                      Edit AB
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 text-[12px] text-text-muted">
+              If you don't generate this week, last week's AB stays live — nothing changes automatically.
+            </div>
+          </>
+        )}
       </div>
 
       {/* Summary Strip */}

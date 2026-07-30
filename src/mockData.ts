@@ -1,4 +1,4 @@
-import { DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, Recommendation, Confidence, Flag, AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary } from './types';
+import { DivisionRecord, DepartmentRecord, CategoryRecord, ClassRecord, StoreRecord, SkuRecord, SkuStoreStatus, AbGenerationDraft, Decision, AbArchiveSnapshot, StoreFormat, Recommendation, Confidence, Flag, AssortmentSnapshot, AssortmentWeeklySnapshot, ExecutiveSummary, Cadence, CategoryPerformancePeriod, ExceptionStatus, ExceptionRecord, ScopeLevel, LoyaltyProfile, BrandRollup } from './types';
 
 export const mockDivisions: DivisionRecord[] = [
   { id: 'div-1', name: 'Fresh' },
@@ -70,18 +70,27 @@ const generateData = () => {
   const patClasses = mockClasses.filter(c => c.categoryId === 'cat-1');
   let skuCounter = 1;
   
+  const detergentBrands = ['Ariel', 'Tide', 'Surf', 'Breeze', 'Pride'];
   for (let i = 0; i < 50; i++) {
     const classRecord = patClasses[i % patClasses.length];
     const skuId = `sku-${skuCounter++}`;
     
+    const revenue = Math.floor(Math.random() * 50000) + 5000;
+    const margin = Math.floor(revenue * (0.15 + Math.random() * 0.2));
+    const qty = Math.floor(revenue / (50 + Math.random() * 100));
+    
+    const brandName = detergentBrands[i % detergentBrands.length];
+
     const sku: SkuRecord = {
       id: skuId,
-      name: `${classRecord.name} Product ${skuCounter}`,
-      brand: `Brand ${(i % 5) + 1}`,
+      name: `${brandName} ${classRecord.name} Variant ${i + 1}`,
+      brand: brandName,
       classId: classRecord.id,
       flags: (i % 7 === 0) ? ['STOCKOUT'] : [],
       duplicateGroupId: (i % 10 === 0) ? 'dup-1' : null,
-      revenueImpact: Math.floor(Math.random() * 50000) + 5000,
+      revenueImpact: revenue,
+      margin,
+      qty,
       weeksOfHistory: Math.floor(Math.random() * 100) + 20
     };
     mockSkus.push(sku);
@@ -389,3 +398,148 @@ export const mockExecutiveSummary: ExecutiveSummary = {
     { label: 'Express Small', customerDb: 0.88, loyaltySales: 0.80, mmsSales: 0.95, skuHierarchy: 0.90 },
   ]
 };
+
+export const mockCategoryPerformance: CategoryPerformancePeriod[] = [];
+export const mockExceptions: ExceptionRecord[] = [];
+export const mockLoyaltyProfiles: LoyaltyProfile[] = [];
+export const mockBrandRollups: BrandRollup[] = [];
+
+// Generate Mock Data for Category Dashboard
+
+const generateCategoryDashboardData = () => {
+  const catId = 'cat-1';
+  const classIds = mockClasses.filter(c => c.categoryId === catId).map(c => c.id);
+
+  // 1. Performance Periods
+  const cadences: Cadence[] = ['WEEKLY', 'MONTHLY', 'YEARLY'];
+  cadences.forEach(cadence => {
+    let count = 12;
+    if (cadence === 'YEARLY') count = 3;
+    
+    for (let i = 0; i < count; i++) {
+      let label = '';
+      if (cadence === 'WEEKLY') label = `Week ${30 - i}, 2026`;
+      if (cadence === 'MONTHLY') label = `Month ${12 - i}, 2026`; // simplified label
+      if (cadence === 'YEARLY') label = `${2026 - i}`;
+
+      // Category level
+      const qty = Math.floor(10000 + Math.random() * 5000);
+      const sales = qty * (50 + Math.random() * 20);
+      const margin = sales * (0.2 + Math.random() * 0.1);
+      
+      const splyQty = qty * (0.9 + Math.random() * 0.2);
+      const splySales = splyQty * (48 + Math.random() * 20);
+      const splyMargin = splySales * (0.18 + Math.random() * 0.12);
+
+      mockCategoryPerformance.push({
+        categoryId: catId,
+        classId: null,
+        cadence,
+        periodLabel: label,
+        periodStart: new Date(Date.now() - i * 86400000 * (cadence==='WEEKLY'?7:cadence==='MONTHLY'?30:365)).toISOString(),
+        qty, margin, sales,
+        splyQty, splyMargin, splySales
+      });
+
+      // Class level
+      classIds.forEach(cId => {
+        const cQty = Math.floor(qty / classIds.length * (0.8 + Math.random() * 0.4));
+        const cSales = cQty * (50 + Math.random() * 20);
+        const cMargin = cSales * (0.2 + Math.random() * 0.1);
+        
+        const cSplyQty = cQty * (0.9 + Math.random() * 0.2);
+        const cSplySales = cSplyQty * (48 + Math.random() * 20);
+        const cSplyMargin = cSplySales * (0.18 + Math.random() * 0.12);
+
+        mockCategoryPerformance.push({
+          categoryId: catId,
+          classId: cId,
+          cadence,
+          periodLabel: label,
+          periodStart: new Date(Date.now() - i * 86400000 * (cadence==='WEEKLY'?7:cadence==='MONTHLY'?30:365)).toISOString(),
+          qty: cQty, margin: cMargin, sales: cSales,
+          splyQty: cSplyQty, splyMargin: cSplyMargin, splySales: cSplySales
+        });
+      });
+    }
+  });
+
+  // 2. Exceptions
+  const exceptionTypes = [
+    "Negative value transaction lines",
+    "Duplicate transaction IDs",
+    "Missing receipt numbers",
+    "Store dimension mismatch",
+    "Unmapped SKU in external file"
+  ];
+  for (let i = 0; i < 10; i++) {
+    const statusRand = Math.random();
+    let status: ExceptionStatus = 'CLEAN';
+    if (statusRand < 0.3) status = 'FOR_RESOLUTION';
+    else if (statusRand < 0.6) status = 'RESOLVED';
+    
+    mockExceptions.push({
+      id: `exc-${i}`,
+      categoryId: catId,
+      skuId: Math.random() > 0.5 ? mockSkus[i % mockSkus.length].id : null,
+      status,
+      type: exceptionTypes[i % exceptionTypes.length],
+      detectedAt: new Date(Date.now() - Math.random() * 86400000 * 10).toISOString(),
+      resolvedAt: status === 'RESOLVED' ? new Date().toISOString() : null,
+      resolvedNote: status === 'RESOLVED' ? 'Fixed data upstream' : null
+    });
+  }
+
+  // 3. Loyalty Profiles
+  const generateLoyalty = (scopeLevel: ScopeLevel, scopeId: string): LoyaltyProfile => {
+    const baseline = 0.4 + Math.random() * 0.3; // 40-70%
+    const capture = baseline * (0.6 + Math.random() * 0.3); // capture is always less than baseline
+    return {
+      scopeLevel,
+      scopeId,
+      baseline,
+      capture,
+      ageGroups: [
+        { label: '18-24', percent: 15 },
+        { label: '25-34', percent: 35 },
+        { label: '35-44', percent: 25 },
+        { label: '45-54', percent: 15 },
+        { label: '55+', percent: 10 }
+      ],
+      genderSplit: { male: 0.4, female: 0.6 }
+    };
+  };
+
+  mockLoyaltyProfiles.push(generateLoyalty('CATEGORY', catId));
+  classIds.forEach(cId => mockLoyaltyProfiles.push(generateLoyalty('CLASS', cId)));
+  for (let i = 0; i < 5; i++) {
+    mockLoyaltyProfiles.push(generateLoyalty('SKU', mockSkus[i].id));
+  }
+
+  // 4. Brand Rollups
+  const brandGroups = new Map<string, { classId: string, skus: string[], qty: number, margin: number, sales: number }>();
+  
+  mockSkus.filter(s => classIds.includes(s.classId)).forEach(s => {
+    if (!brandGroups.has(s.brand)) {
+      brandGroups.set(s.brand, { classId: s.classId, skus: [], qty: 0, margin: 0, sales: 0 });
+    }
+    const group = brandGroups.get(s.brand)!;
+    group.skus.push(s.id);
+    group.qty += s.qty;
+    group.margin += s.margin;
+    group.sales += s.revenueImpact;
+  });
+
+  brandGroups.forEach((val, key) => {
+    mockBrandRollups.push({
+      brand: key,
+      classId: val.classId,
+      totalQty: val.qty,
+      totalMargin: val.margin,
+      totalSales: val.sales,
+      skuIds: val.skus
+    });
+  });
+};
+
+generateCategoryDashboardData();

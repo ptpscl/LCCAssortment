@@ -24,6 +24,57 @@ export interface SkuRecord {
   duplicateGroupId: string | null;
   revenueImpact: number;
   weeksOfHistory: number;
+  margin: number;
+  qty: number;
+}
+
+export type Cadence = 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface CategoryPerformancePeriod {
+  categoryId: string;
+  classId: string | null;
+  cadence: Cadence;
+  periodLabel: string;
+  periodStart: string;
+  qty: number;
+  margin: number;
+  sales: number;
+  splyQty: number;
+  splyMargin: number;
+  splySales: number;
+}
+
+export type ExceptionStatus = 'CLEAN' | 'FOR_RESOLUTION' | 'RESOLVED';
+
+export interface ExceptionRecord {
+  id: string;
+  categoryId: string;
+  skuId: string | null;
+  status: ExceptionStatus;
+  type: string;
+  detectedAt: string;
+  resolvedAt: string | null;
+  resolvedNote: string | null;
+}
+
+export type ScopeLevel = 'CATEGORY' | 'CLASS' | 'SKU';
+
+export interface LoyaltyProfile {
+  scopeLevel: ScopeLevel;
+  scopeId: string;
+  baseline: number;
+  capture: number;
+  ageGroups: { label: string; percent: number }[];
+  genderSplit: { male: number; female: number };
+}
+
+export interface BrandRollup {
+  brand: string;
+  classId: string;
+  totalQty: number;
+  totalMargin: number;
+  totalSales: number;
+  skuIds: string[];
 }
 
 export interface SkuStoreStatus {
@@ -126,4 +177,33 @@ export interface ExecutiveSummary {
     mmsSales: number;
     skuHierarchy: number;
   }[];
+}
+
+export interface PortfolioCategoryNode {
+  type: 'CATEGORY';
+  id: string;
+  name: string;
+  qty: number;
+  margin: number;
+  sales: number;
+}
+
+export interface PortfolioDepartmentNode {
+  type: 'DEPARTMENT';
+  id: string;
+  name: string;
+  qty: number;
+  margin: number;
+  sales: number;
+  children: PortfolioCategoryNode[];
+}
+
+export interface PortfolioDivisionNode {
+  type: 'DIVISION';
+  id: string;
+  name: string;
+  qty: number;
+  margin: number;
+  sales: number;
+  children: PortfolioDepartmentNode[];
 }

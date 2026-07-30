@@ -15,6 +15,7 @@ import LoginView from './components/views/LoginView';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<string>('home');
+  const [activePersona, setActivePersona] = useState('Pat Cruz');
 
   if (!isAuthenticated) {
     return <LoginView onLogin={() => setIsAuthenticated(true)} />;
@@ -24,7 +25,7 @@ export default function App() {
     switch(currentView) {
       case 'home': return <HomeView />;
       case 'executive-dashboard': return <ExecutiveDashboard />;
-      case 'category-dashboard': return <CategoryDashboard />;
+      case 'category-dashboard': return <CategoryDashboard activePersona={activePersona} />;
       case 'issue-summary': return <IssueSummary />;
       case 'review-queue': return <QueueScreen onViewChange={setCurrentView} />;
       case 'assortment-tracker': return <AssortmentTracker />;
@@ -52,7 +53,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-surface-bg font-sans text-text-main selection:bg-brand-50 selection:text-brand-600">
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} onLogout={() => setIsAuthenticated(false)} />
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} onLogout={() => setIsAuthenticated(false)} activePersona={activePersona} setActivePersona={setActivePersona} />
       
       <main className="flex flex-col flex-1 overflow-hidden">
         <Topbar title={getTitle()} />

@@ -5,9 +5,11 @@ interface SidebarProps {
   currentView: string;
   onViewChange: (view: string) => void;
   onLogout: () => void;
+  activePersona?: string;
+  setActivePersona?: (persona: string) => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, onLogout }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, onLogout, activePersona = 'Pat Cruz', setActivePersona }: SidebarProps) {
   const topNavItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'executive-dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
@@ -58,14 +60,22 @@ export default function Sidebar({ currentView, onViewChange, onLogout }: Sidebar
         </div>
       </div>
       
-      <div className="p-4 border-t border-border-subtle shrink-0">
-        <div className="flex items-center mb-4">
+            <div className="p-4 border-t border-border-subtle shrink-0">
+        <div 
+          className="flex items-center mb-4 cursor-pointer hover:bg-surface-bg p-2 -mx-2 rounded-[8px] transition-colors"
+          onClick={() => {
+            if (setActivePersona) {
+              setActivePersona(activePersona === 'Pat Cruz' ? 'Alex Rivers' : 'Pat Cruz');
+            }
+          }}
+          title="Click to switch persona"
+        >
           <div className="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-semibold text-[13px] mr-3 shrink-0">
-            PC
+            {activePersona === 'Pat Cruz' ? 'PC' : 'AR'}
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-text-main truncate">Pat Cruz</p>
-            <p className="text-[12px] text-text-muted truncate">Category Manager</p>
+            <p className="text-[13px] font-semibold text-text-main truncate">{activePersona}</p>
+            <p className="text-[12px] text-text-muted truncate">{activePersona === 'Pat Cruz' ? 'Category Manager' : 'Division Manager'}</p>
           </div>
         </div>
         
