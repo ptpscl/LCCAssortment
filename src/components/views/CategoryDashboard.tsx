@@ -264,6 +264,8 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
   const [dateFrom, setDateFrom] = useState('2026-06-01');
   const [dateTo, setDateTo] = useState('2026-07-23');
   const [groupBy, setGroupBy] = useState<'categorization' | 'store'>('categorization');
+  const [storeCategorization, setStoreCategorization] = useState('All');
+  const [performanceScope, setPerformanceScope] = useState<'DIVISION' | 'DEPARTMENT' | 'CATEGORY'>('CATEGORY');
   
   const [cardBreakdownView, setCardBreakdownView] = useState<'categorization' | 'individual_store'>('categorization');
   
@@ -379,6 +381,20 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
     });
   };
 
+  const filterScale = useMemo(() => {
+    const from = new Date(dateFrom).getTime();
+    const to = new Date(dateTo).getTime();
+    const selectedDays = Number.isFinite(from) && Number.isFinite(to) && to >= from
+      ? Math.max(1, Math.round((to - from) / 86400000) + 1)
+      : 53;
+    const dateFactor = Math.min(2, Math.max(0.1, selectedDays / 53));
+    const categorizationFactor = storeCategorization === 'All'
+      ? 1
+      : [0.24, 0.23, 0.21, 0.17, 0.15][CATEGORIZATIONS.indexOf(storeCategorization)] ?? 0.2;
+    const scopeFactor = performanceScope === 'DIVISION' ? 3.4 : performanceScope === 'DEPARTMENT' ? 1.8 : 1;
+    return dateFactor * categorizationFactor * scopeFactor;
+  }, [dateFrom, dateTo, performanceScope, storeCategorization]);
+
   const categoryTotals = useMemo(() => {
     let qty = 0, margin = 0, sales = 0;
     skus.forEach(s => {
@@ -386,8 +402,12 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
       margin += s.margin;
       sales += s.revenueImpact;
     });
-    return { qty, margin, sales };
-  }, [skus]);
+    return {
+      qty: Math.round(qty * filterScale),
+      margin: Math.round(margin * filterScale),
+      sales: Math.round(sales * filterScale),
+    };
+  }, [filterScale, skus]);
 
   const classBreakdown = useMemo(() => {
     const map = new Map<string, { qty: number; margin: number; sales: number }>();
@@ -402,9 +422,59 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
     });
     return Array.from(map.entries()).map(([classId, stats]) => ({
       classId,
-      ...stats
+      qty: Math.round(stats.qty * filterScale),
+      margin: Math.round(stats.margin * filterScale),
+      sales: Math.round(stats.sales * filterScale),
     }));
-  }, [classes, skus]);
+  }, [classes, filterScale, skus]);
+
+  const displayTrendData = useMemo(() => {
+    const from = new Date(dateFrom).getTime();
+    const to = new Date(dateTo).getTime();
+    const filtered = trendData.filter(period => {
+      const timestamp = new Date(period.periodStart).getTime();
+      return (!Number.isFinite(from) || timestamp >= from) && (!Number.isFinite(to) || timestamp <= to);
+    });
+    const source = filtered;
+    const scopeFactor = performanceScope === 'DIVISION' ? 3.4 : performanceScope === 'DEPARTMENT' ? 1.8 : 1;
+    const categoryFactor = storeCategorization === 'All'
+      ? 1
+      : [0.24, 0.23, 0.21, 0.17, 0.15][CATEGORIZATIONS.indexOf(storeCategorization)] ?? 0.2;
+    return source.map(period => ({
+      ...period,
+      qty: Math.round(period.qty * scopeFactor * categoryFactor),
+      margin: Math.round(period.margin * scopeFactor * categoryFactor),
+      sales: Math.round(period.sales * scopeFactor * categoryFactor),
+      splyQty: Math.round(period.splyQty * scopeFactor * categoryFactor),
+      splyMargin: Math.round(period.splyMargin * scopeFactor * categoryFactor),
+      splySales: Math.round(period.splySales * scopeFactor * categoryFactor),
+    }));
+  }, [dateFrom, dateTo, performanceScope, storeCategorization, trendData]);
+
+  const classQuality = useMemo(() => classes.map(cls => {
+    const classSkus = skus.filter(sku => sku.classId === cls.id);
+    const forResolution = classSkus.filter(sku => sku.flags.length > 0).length;
+    const resolved = classSkus.filter(sku => sku.duplicateGroupId !== null).length;
+    return { id: cls.id, label: cls.name, clean: Math.max(0, classSkus.length - forResolution - resolved), forResolution, resolved };
+  }), [classes, skus]);
+
+  const familyOverlaps = useMemo(() => {
+    const groups = new Map<string, SkuRecord[]>();
+    skus.forEach(sku => {
+      const familyId = `FAM-${sku.brand.toUpperCase().replace(/\s+/g, '-')}-${sku.classId.toUpperCase()}`;
+      groups.set(familyId, [...(groups.get(familyId) ?? []), sku]);
+    });
+    return Array.from(groups.entries())
+      .filter(([, members]) => members.length > 1)
+      .map(([familyId, members]) => ({
+        familyId,
+        brand: members[0].brand,
+        members: members.length,
+        sales: Math.round(members.reduce((sum, sku) => sum + sku.revenueImpact, 0) * filterScale),
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 8);
+  }, [filterScale, skus]);
 
   const formatCurrency = (val: number) => `₱${val.toLocaleString()}`;
 
@@ -423,8 +493,9 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
   const generateMockBreakdown = (stats: { qty: number, margin: number, sales: number }) => {
     const isStoreView = groupBy === 'store' && cardBreakdownView === 'individual_store';
     if (isStoreView) {
-      return stores.map((store, i) => {
-        const factor = (i % 3 === 0) ? 0.15 : (i % 2 === 0 ? 0.1 : 0.05);
+      const matchingStores = stores.filter((_, i) => storeCategorization === 'All' || CATEGORIZATIONS[i % CATEGORIZATIONS.length] === storeCategorization);
+      return matchingStores.map(store => {
+        const factor = matchingStores.length > 0 ? 1 / matchingStores.length : 0;
         return {
           id: store.id,
           label: store.name,
@@ -434,8 +505,8 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
         };
       });
     } else {
-      return CATEGORIZATIONS.map((cat, i) => {
-        const factor = [0.3, 0.25, 0.2, 0.15, 0.1][i];
+      return CATEGORIZATIONS.filter(cat => storeCategorization === 'All' || cat === storeCategorization).map((cat, i) => {
+        const factor = storeCategorization === 'All' ? [0.3, 0.25, 0.2, 0.15, 0.1][i] : 1;
         return {
           id: cat,
           label: cat,
@@ -518,7 +589,7 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
       {/* Filter Bar */}
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col">
         <div className="flex flex-row justify-between items-center p-4">
-          <div className="flex flex-row items-center gap-6">
+          <div className="flex flex-row flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
               <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Date Range</label>
               <div className="flex items-center gap-2">
@@ -528,7 +599,22 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
               </div>
             </div>
             
-            {/* The prompt didn't ask for store categorization dropdown here, so we omit it to stick closely to instructions */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Performance Scope</label>
+              <select value={performanceScope} onChange={e => setPerformanceScope(e.target.value as 'DIVISION' | 'DEPARTMENT' | 'CATEGORY')} className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]">
+                <option value="DIVISION">Division - {division?.name}</option>
+                <option value="DEPARTMENT">Department - {department?.name}</option>
+                <option value="CATEGORY">Category - {category?.name}</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Store Categorization</label>
+              <select value={storeCategorization} onChange={e => setStoreCategorization(e.target.value)} className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[190px]">
+                <option value="All">All Store Categorizations</option>
+                {CATEGORIZATIONS.map(value => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
           </div>
         </div>
         <div className="border-b border-border-subtle w-full"></div>
@@ -724,8 +810,8 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
             </div>
 
             {(() => {
-              if (trendData.length === 0) return null;
-              const latest = trendData[trendData.length - 1];
+              if (displayTrendData.length === 0) return null;
+              const latest = displayTrendData[displayTrendData.length - 1];
               const curVal = latest[trendMetric];
               // SPLY property names
               const splyProp = trendMetric === 'sales' ? 'splySales' : trendMetric === 'margin' ? 'splyMargin' : 'splyQty';
@@ -758,7 +844,7 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
         <div className="p-6">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+              <LineChart data={displayTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis 
                   dataKey="periodLabel" 
@@ -814,6 +900,36 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
         </div>
       </div>
 
+      {/* Family Overlap */}
+      <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle flex flex-col overflow-hidden">
+        <div className="px-6 py-5 border-b border-border-subtle">
+          <h3 className="text-[16px] font-semibold text-text-main">Family Overlap</h3>
+          <p className="text-[12px] text-text-muted mt-1">SKU members grouped by derived family overlap ID</p>
+        </div>
+        <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
+          <table className="w-full text-left border-collapse min-w-[620px]">
+            <thead className="sticky top-0 bg-surface-bg z-10">
+              <tr className="border-b border-border-subtle text-[12px] font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-6 py-3">Family Overlap ID</th>
+                <th className="px-6 py-3">Brand</th>
+                <th className="px-6 py-3 text-right">SKU Members</th>
+                <th className="px-6 py-3 text-right">Sales</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {familyOverlaps.map(row => (
+                <tr key={row.familyId} className="hover:bg-surface-bg transition-colors">
+                  <td className="px-6 py-3 text-[13px] font-medium text-brand-600">{row.familyId}</td>
+                  <td className="px-6 py-3 text-[13px] text-text-main">{row.brand}</td>
+                  <td className="px-6 py-3 text-[13px] text-text-main text-right">{row.members}</td>
+                  <td className="px-6 py-3 text-[13px] font-medium text-text-main text-right">{formatCurrency(row.sales)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Data Quality Summary */}
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle p-6 flex flex-col gap-4">
         <h3 className="text-[16px] font-semibold text-text-main">Data Quality</h3>
@@ -823,16 +939,38 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-green-50 border border-green-200 text-green-800 text-[13px] font-medium">
                 <div className="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
-                Clean: {formatNumber(exceptionCounts.clean)}
+                Clean: {formatNumber(Math.round(exceptionCounts.clean * filterScale))}
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-medium">
                 <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
-                For Resolution: {formatNumber(exceptionCounts.forResolution)}
+                For Resolution: {formatNumber(Math.round(exceptionCounts.forResolution * filterScale))}
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-surface-bg border border-border-subtle text-text-main text-[13px] font-medium">
                 <div className="w-2 h-2 rounded-full bg-border-subtle shrink-0"></div>
-                Resolved: {formatNumber(exceptionCounts.resolved)}
+                Resolved: {formatNumber(Math.round(exceptionCounts.resolved * filterScale))}
               </div>
+            </div>
+            <div className="overflow-x-auto border border-border-subtle rounded-[8px]">
+              <table className="w-full text-left border-collapse min-w-[560px]">
+                <thead>
+                  <tr className="bg-surface-bg text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+                    <th className="px-4 py-2.5">Class</th>
+                    <th className="px-4 py-2.5 text-right">Clean</th>
+                    <th className="px-4 py-2.5 text-right">For Resolution</th>
+                    <th className="px-4 py-2.5 text-right">Resolved</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {classQuality.map(row => (
+                    <tr key={row.id}>
+                      <td className="px-4 py-2.5 text-[12px] font-medium text-text-main">{row.label}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-right text-text-main">{Math.round(row.clean * filterScale)}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-right text-warning">{Math.round(row.forResolution * filterScale)}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-right text-text-muted">{Math.round(row.resolved * filterScale)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <p className="text-[13px] text-text-muted mt-1">Full exception detail available in Exception Dashboard.</p>
           </div>
@@ -877,13 +1015,13 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
                           {brand.brand}
                         </td>
                         <td className="px-6 py-4 text-[13px] text-right font-medium text-text-main">
-                          {formatNumber(brand.totalQty)}
+                          {formatNumber(Math.round(brand.totalQty * filterScale))}
                         </td>
                         <td className="px-6 py-4 text-[13px] text-right font-medium text-text-main">
-                          {formatCurrency(brand.totalMargin)}
+                          {formatCurrency(Math.round(brand.totalMargin * filterScale))}
                         </td>
                         <td className="px-6 py-4 text-[13px] text-right font-medium text-text-main">
-                          {formatCurrency(brand.totalSales)}
+                          {formatCurrency(Math.round(brand.totalSales * filterScale))}
                         </td>
                         <td className="px-6 py-4"></td>
                       </tr>
@@ -907,13 +1045,13 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
                               </div>
                             </td>
                             <td className="px-6 py-3 text-[13px] text-right text-text-muted">
-                              {formatNumber(variant.qty)}
+                              {formatNumber(Math.round(variant.qty * filterScale))}
                             </td>
                             <td className="px-6 py-3 text-[13px] text-right text-text-muted">
-                              {formatCurrency(variant.margin)}
+                              {formatCurrency(Math.round(variant.margin * filterScale))}
                             </td>
                             <td className="px-6 py-3 text-[13px] text-right text-text-muted">
-                              {formatCurrency(variant.revenueImpact)}
+                              {formatCurrency(Math.round(variant.revenueImpact * filterScale))}
                             </td>
                             <td className="px-6 py-3 text-[13px] text-right text-text-muted">
                               <div className="flex justify-end gap-2 items-center">
