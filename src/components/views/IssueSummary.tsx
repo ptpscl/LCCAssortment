@@ -55,22 +55,63 @@ const stageBadge: Record<StageKey, string> = {
   'Stage C': 'bg-[#2F7D32]',
 };
 
-const categorizationIssues = [
-  { label: 'SMR Large', unresolved: 24, resolved: 76 },
-  { label: 'SMR Medium', unresolved: 27, resolved: 73 },
-  { label: 'SMR Small', unresolved: 31, resolved: 69 },
-  { label: 'Express', unresolved: 36, resolved: 64 },
+type IssueCounts = { resolved: number; unresolved: number };
+type StoreIssue = {
+  label: string;
+  category: string;
+  stages: Record<StageKey, IssueCounts>;
+};
+
+const storeIssues: StoreIssue[] = [
+  { label: 'LCC Legazpi', category: 'SMR Large', stages: {
+    'Stage A': { resolved: 842400, unresolved: 126360 },
+    'Stage B': { resolved: 791850, unresolved: 176910 },
+    'Stage C': { resolved: 755220, unresolved: 213540 },
+  } },
+  { label: 'LCC Daraga', category: 'SMR Large', stages: {
+    'Stage A': { resolved: 694180, unresolved: 132760 },
+    'Stage B': { resolved: 641920, unresolved: 185020 },
+    'Stage C': { resolved: 619410, unresolved: 207530 },
+  } },
+  { label: 'LCC Tabaco', category: 'SMR Medium', stages: {
+    'Stage A': { resolved: 512640, unresolved: 112580 },
+    'Stage B': { resolved: 461420, unresolved: 163800 },
+    'Stage C': { resolved: 438910, unresolved: 186310 },
+  } },
+  { label: 'LCC Naga', category: 'SMR Medium', stages: {
+    'Stage A': { resolved: 731950, unresolved: 96840 },
+    'Stage B': { resolved: 684110, unresolved: 144680 },
+    'Stage C': { resolved: 659870, unresolved: 168920 },
+  } },
+  { label: 'LCC Polangui', category: 'SMR Small', stages: {
+    'Stage A': { resolved: 318720, unresolved: 84610 },
+    'Stage B': { resolved: 283460, unresolved: 119870 },
+    'Stage C': { resolved: 264190, unresolved: 139140 },
+  } },
+  { label: 'LCC Express Rawis', category: 'Express', stages: {
+    'Stage A': { resolved: 214580, unresolved: 58720 },
+    'Stage B': { resolved: 186940, unresolved: 86360 },
+    'Stage C': { resolved: 171520, unresolved: 101780 },
+  } },
+  { label: 'LCC Express Penaranda', category: 'Express', stages: {
+    'Stage A': { resolved: 148960, unresolved: 52140 },
+    'Stage B': { resolved: 126350, unresolved: 74750 },
+    'Stage C': { resolved: 112480, unresolved: 88620 },
+  } },
 ];
 
-const storeIssues = [
-  { label: 'LCC Legazpi', category: 'SMR Large', unresolved: 16, resolved: 84 },
-  { label: 'LCC Daraga', category: 'SMR Large', unresolved: 23, resolved: 77 },
-  { label: 'LCC Tabaco', category: 'SMR Medium', unresolved: 28, resolved: 72 },
-  { label: 'LCC Naga', category: 'SMR Medium', unresolved: 19, resolved: 81 },
-  { label: 'LCC Polangui', category: 'SMR Small', unresolved: 34, resolved: 66 },
-  { label: 'LCC Express Rawis', category: 'Express', unresolved: 27, resolved: 73 },
-  { label: 'LCC Express Penaranda', category: 'Express', unresolved: 38, resolved: 62 },
-];
+const storeCategories = Array.from(new Set(storeIssues.map(row => row.category)));
+
+const stageDescriptions: Record<StageKey, string> = {
+  'Stage A': 'Customer DB + Loyalty',
+  'Stage B': 'Stage A + MMS Sales',
+  'Stage C': 'Stage B + SKU Hierarchy',
+};
+
+const formatCount = (value: number) => new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+}).format(value);
 
 export default function IssueSummary() {
   const [timeFrom, setTimeFrom] = useState('');
@@ -83,21 +124,43 @@ export default function IssueSummary() {
   const activeFlags = useMemo(() => stageFlags[activeStage], [activeStage]);
   const activeAnomalies = useMemo(() => stageAnomalies[activeStage], [activeStage]);
   const issueBreakdown = useMemo(() => {
-    if (groupBy === 'categorization') {
-      return storeCategorization === 'All'
-        ? categorizationIssues
-        : categorizationIssues.filter(row => row.label === storeCategorization);
-    }
-
-    return storeIssues.filter(row =>
+    const filteredStores = storeIssues.filter(row =>
       (storeCategorization === 'All' || row.category === storeCategorization) &&
       (store === 'All' || row.label === store)
     );
-  }, [groupBy, store, storeCategorization]);
+
+    if (groupBy === 'categorization') {
+      return storeCategories
+        .filter(category => storeCategorization === 'All' || category === storeCategorization)
+        .map(category => {
+          const rows = filteredStores.filter(row => row.category === category);
+          return rows.reduce(
+            (totals, row) => ({
+              label: category,
+              resolved: totals.resolved + row.stages[activeStage].resolved,
+              unresolved: totals.unresolved + row.stages[activeStage].unresolved,
+            }),
+            { label: category, resolved: 0, unresolved: 0 }
+          );
+        });
+    }
+
+    return filteredStores.map(row => ({ label: row.label, ...row.stages[activeStage] }));
+  }, [activeStage, groupBy, store, storeCategorization]);
 
   const availableStores = useMemo(
     () => storeIssues.filter(row => storeCategorization === 'All' || row.category === storeCategorization),
     [storeCategorization]
+  );
+  const issueTotals = useMemo(
+    () => issueBreakdown.reduce(
+      (totals, row) => ({
+        resolved: totals.resolved + row.resolved,
+        unresolved: totals.unresolved + row.unresolved,
+      }),
+      { resolved: 0, unresolved: 0 }
+    ),
+    [issueBreakdown]
   );
 
   const renderTable = () => {
@@ -216,8 +279,8 @@ export default function IssueSummary() {
                 className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
               >
                 <option value="All">All Store Categorizations</option>
-                {categorizationIssues.map(row => (
-                  <option key={row.label} value={row.label}>{row.label}</option>
+                {storeCategories.map(category => (
+                  <option key={category} value={category}>{category}</option>
                 ))}
               </select>
             </div>
@@ -282,7 +345,7 @@ export default function IssueSummary() {
           <div>
             <h3 className="text-[16px] font-semibold text-text-main">Transaction Level Issues</h3>
             <p className="text-[12px] text-text-muted mt-1">
-              {activeStage} issue status grouped by {groupBy === 'categorization' ? 'store categorization' : 'store'}
+              {activeStage}: {stageDescriptions[activeStage]} grouped by {groupBy === 'categorization' ? 'store categorization' : 'store'}
             </p>
           </div>
           <div className="flex items-center gap-5 text-[12px] text-text-muted">
@@ -292,15 +355,29 @@ export default function IssueSummary() {
         </div>
         <div className="space-y-4">
           {issueBreakdown.map(row => (
-            <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_88px] gap-2 md:gap-4 md:items-center">
-              <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
-              <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg">
-                <div className="bg-success transition-all duration-500" style={{ width: `${row.resolved}%` }} />
-                <div className="bg-error transition-all duration-500" style={{ width: `${row.unresolved}%` }} />
-              </div>
-              <span className="text-[12px] text-text-muted md:text-right">{row.unresolved}% open</span>
-            </div>
+            (() => {
+              const total = row.resolved + row.unresolved;
+              const resolvedPct = total ? (row.resolved / total) * 100 : 0;
+              const unresolvedPct = 100 - resolvedPct;
+              return (
+                <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_150px] gap-2 md:gap-4 md:items-center">
+                  <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
+                  <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg" title={`${formatCount(row.resolved)} resolved, ${formatCount(row.unresolved)} unresolved`}>
+                    <div className="bg-success transition-all duration-500" style={{ width: `${resolvedPct}%` }} />
+                    <div className="bg-error transition-all duration-500" style={{ width: `${unresolvedPct}%` }} />
+                  </div>
+                  <span className="text-[12px] text-text-muted md:text-right">
+                    {unresolvedPct.toFixed(1)}% open ({formatCount(row.unresolved)})
+                  </span>
+                </div>
+              );
+            })()
           ))}
+        </div>
+        <div className="mt-5 pt-4 border-t border-border-subtle flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-text-muted">
+          <span>Total: <strong className="text-text-main">{formatCount(issueTotals.resolved + issueTotals.unresolved)}</strong></span>
+          <span>Resolved: <strong className="text-success">{formatCount(issueTotals.resolved)}</strong></span>
+          <span>Unresolved: <strong className="text-error">{formatCount(issueTotals.unresolved)}</strong></span>
         </div>
       </div>
 
