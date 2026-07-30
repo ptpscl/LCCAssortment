@@ -66,6 +66,10 @@ export interface LoyaltyProfile {
   capture: number;
   ageGroups: { label: string; percent: number }[];
   genderSplit: { male: number; female: number };
+  linkedCustomers: number;
+  loyaltySales: number;
+  averageBasket: number;
+  visitsPerCustomer: number;
 }
 
 export interface BrandRollup {

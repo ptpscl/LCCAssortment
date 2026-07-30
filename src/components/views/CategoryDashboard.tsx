@@ -31,6 +31,8 @@ const LoyaltyRow = ({ scopeLevel, scopeId, title, isExpanded, onToggleExpand, ha
   const actualBaseline = profile.baseline * 100;
   const capture = profile.capture * 100;
   const visualBaseline = (actualBaseline - capture > 0 && actualBaseline - capture < 3) ? capture + 3 : actualBaseline;
+  const compactNumber = new Intl.NumberFormat('en-PH', { notation: 'compact', maximumFractionDigits: 1 });
+  const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
   return (
     <React.Fragment>
@@ -73,6 +75,24 @@ const LoyaltyRow = ({ scopeLevel, scopeId, title, isExpanded, onToggleExpand, ha
       {showDemo && (
         <tr className="bg-surface-base border-b border-border-subtle">
           <td colSpan={scopeLevel === 'CATEGORY' ? 4 : 4} className="px-6 py-6 pl-16">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              <div className="rounded-[8px] border border-border-subtle bg-white p-3">
+                <div className="text-[11px] text-text-muted uppercase tracking-wider">Linked Customers</div>
+                <div className="text-[18px] font-semibold text-text-main mt-1">{compactNumber.format(profile.linkedCustomers)}</div>
+              </div>
+              <div className="rounded-[8px] border border-border-subtle bg-white p-3">
+                <div className="text-[11px] text-text-muted uppercase tracking-wider">Loyalty Sales</div>
+                <div className="text-[18px] font-semibold text-text-main mt-1">{peso.format(profile.loyaltySales)}</div>
+              </div>
+              <div className="rounded-[8px] border border-border-subtle bg-white p-3">
+                <div className="text-[11px] text-text-muted uppercase tracking-wider">Average Basket</div>
+                <div className="text-[18px] font-semibold text-text-main mt-1">{peso.format(profile.averageBasket)}</div>
+              </div>
+              <div className="rounded-[8px] border border-border-subtle bg-white p-3">
+                <div className="text-[11px] text-text-muted uppercase tracking-wider">Visits / Customer</div>
+                <div className="text-[18px] font-semibold text-text-main mt-1">{profile.visitsPerCustomer.toFixed(1)}</div>
+              </div>
+            </div>
             <div className="flex flex-col md:flex-row gap-12">
               <div className="flex-1 max-w-[300px]">
                 <h4 className="text-[12px] font-semibold text-text-muted uppercase tracking-wider mb-3">Age Groups</h4>
@@ -88,10 +108,15 @@ const LoyaltyRow = ({ scopeLevel, scopeId, title, isExpanded, onToggleExpand, ha
                   ))}
                 </div>
               </div>
-              <div>
+              <div className="w-full max-w-[260px]">
                 <h4 className="text-[12px] font-semibold text-text-muted uppercase tracking-wider mb-3">Gender Split</h4>
-                <div className="flex items-center gap-2 text-[13px] text-text-main font-medium">
-                  Male {(profile.genderSplit.male * 100).toFixed(0)}% <span className="text-border-subtle font-normal">·</span> Female {(profile.genderSplit.female * 100).toFixed(0)}%
+                <div className="h-3 w-full flex rounded-full overflow-hidden bg-surface-bg mb-2">
+                  <div className="bg-brand-600" style={{ width: `${profile.genderSplit.female * 100}%` }} />
+                  <div className="bg-brand-50" style={{ width: `${profile.genderSplit.male * 100}%` }} />
+                </div>
+                <div className="flex justify-between text-[12px] text-text-muted">
+                  <span>Female {(profile.genderSplit.female * 100).toFixed(0)}%</span>
+                  <span>Male {(profile.genderSplit.male * 100).toFixed(0)}%</span>
                 </div>
               </div>
             </div>
@@ -739,7 +764,10 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
       <div className="bg-white rounded-[10px] border border-border-subtle shadow-subtle overflow-hidden flex flex-col">
         <div className="px-6 py-5 border-b border-border-subtle bg-white">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h3 className="text-[16px] font-semibold text-text-main">Performance Trend</h3>
+            <div>
+              <h3 className="text-[16px] font-semibold text-text-main">Transaction Performance Trend</h3>
+              <p className="text-[12px] text-text-muted mt-1">POS sales, margin, and sold quantity; excludes inventory and supply availability</p>
+            </div>
             
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex bg-surface-bg border border-border-subtle rounded-[6px] overflow-hidden shadow-sm p-0.5">

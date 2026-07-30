@@ -500,13 +500,17 @@ const generateCategoryDashboardData = () => {
       baseline,
       capture,
       ageGroups: [
-        { label: '18-24', percent: 15 },
-        { label: '25-34', percent: 35 },
-        { label: '35-44', percent: 25 },
-        { label: '45-54', percent: 15 },
-        { label: '55+', percent: 10 }
+        { label: '18-24', percent: 0.14 },
+        { label: '25-34', percent: 0.31 },
+        { label: '35-44', percent: 0.27 },
+        { label: '45-54', percent: 0.17 },
+        { label: '55+', percent: 0.11 }
       ],
-      genderSplit: { male: 0.4, female: 0.6 }
+      genderSplit: { male: 0.42, female: 0.58 },
+      linkedCustomers: scopeLevel === 'CATEGORY' ? 18640 : scopeLevel === 'CLASS' ? 5240 : 680,
+      loyaltySales: scopeLevel === 'CATEGORY' ? 12840000 : scopeLevel === 'CLASS' ? 3640000 : 428000,
+      averageBasket: scopeLevel === 'CATEGORY' ? 742 : scopeLevel === 'CLASS' ? 688 : 631,
+      visitsPerCustomer: scopeLevel === 'CATEGORY' ? 3.8 : scopeLevel === 'CLASS' ? 3.2 : 2.7,
     };
   };
 
