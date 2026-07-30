@@ -435,7 +435,8 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
       const timestamp = new Date(period.periodStart).getTime();
       return (!Number.isFinite(from) || timestamp >= from) && (!Number.isFinite(to) || timestamp <= to);
     });
-    const source = filtered;
+    // Sparse monthly/yearly selections still need enough points to draw a meaningful trend.
+    const source = filtered.length >= 2 ? filtered : trendData;
     const scopeFactor = performanceScope === 'DIVISION' ? 3.4 : performanceScope === 'DEPARTMENT' ? 1.8 : 1;
     const categoryFactor = storeCategorization === 'All'
       ? 1
@@ -843,6 +844,7 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
         
         <div className="p-6">
           <div className="h-[300px] w-full">
+            {displayTrendData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={displayTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -896,6 +898,11 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
                 />
               </LineChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-[13px] text-text-muted">
+                No transaction trend data is available for this selection.
+              </div>
+            )}
           </div>
         </div>
       </div>

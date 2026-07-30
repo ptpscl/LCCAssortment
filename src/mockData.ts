@@ -412,51 +412,53 @@ const generateCategoryDashboardData = () => {
 
   // 1. Performance Periods
   const cadences: Cadence[] = ['WEEKLY', 'MONTHLY', 'YEARLY'];
-  cadences.forEach(cadence => {
+  cadences.forEach((cadence, cadenceIndex) => {
     let count = 12;
     if (cadence === 'YEARLY') count = 3;
     
     for (let i = 0; i < count; i++) {
-      let label = '';
-      if (cadence === 'WEEKLY') label = `Week ${30 - i}, 2026`;
-      if (cadence === 'MONTHLY') label = `Month ${12 - i}, 2026`; // simplified label
-      if (cadence === 'YEARLY') label = `${2026 - i}`;
+      const periodStart = new Date(Date.now() - i * 86400000 * (cadence === 'WEEKLY' ? 7 : cadence === 'MONTHLY' ? 30 : 365));
+      const label = cadence === 'WEEKLY'
+        ? periodStart.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+        : cadence === 'MONTHLY'
+          ? periodStart.toLocaleDateString('en-PH', { month: 'short', year: 'numeric' })
+          : periodStart.getFullYear().toString();
 
       // Category level
-      const qty = Math.floor(10000 + Math.random() * 5000);
-      const sales = qty * (50 + Math.random() * 20);
-      const margin = sales * (0.2 + Math.random() * 0.1);
+      const qty = 10800 + ((i * 937 + cadenceIndex * 521) % 3600);
+      const sales = qty * (58 + ((i + cadenceIndex) % 5) * 2);
+      const margin = sales * (0.22 + (i % 4) * 0.012);
       
-      const splyQty = qty * (0.9 + Math.random() * 0.2);
-      const splySales = splyQty * (48 + Math.random() * 20);
-      const splyMargin = splySales * (0.18 + Math.random() * 0.12);
+      const splyQty = qty * (0.91 + (i % 3) * 0.025);
+      const splySales = splyQty * (56 + ((i + 2) % 4) * 2);
+      const splyMargin = splySales * (0.21 + (i % 3) * 0.01);
 
       mockCategoryPerformance.push({
         categoryId: catId,
         classId: null,
         cadence,
         periodLabel: label,
-        periodStart: new Date(Date.now() - i * 86400000 * (cadence==='WEEKLY'?7:cadence==='MONTHLY'?30:365)).toISOString(),
+        periodStart: periodStart.toISOString(),
         qty, margin, sales,
         splyQty, splyMargin, splySales
       });
 
       // Class level
-      classIds.forEach(cId => {
-        const cQty = Math.floor(qty / classIds.length * (0.8 + Math.random() * 0.4));
-        const cSales = cQty * (50 + Math.random() * 20);
-        const cMargin = cSales * (0.2 + Math.random() * 0.1);
+      classIds.forEach((cId, classIndex) => {
+        const cQty = Math.floor(qty * [0.38, 0.35, 0.27][classIndex]);
+        const cSales = cQty * (57 + classIndex * 4);
+        const cMargin = cSales * (0.21 + classIndex * 0.025);
         
-        const cSplyQty = cQty * (0.9 + Math.random() * 0.2);
-        const cSplySales = cSplyQty * (48 + Math.random() * 20);
-        const cSplyMargin = cSplySales * (0.18 + Math.random() * 0.12);
+        const cSplyQty = cQty * (0.92 + classIndex * 0.015);
+        const cSplySales = cSplyQty * (55 + classIndex * 4);
+        const cSplyMargin = cSplySales * (0.2 + classIndex * 0.025);
 
         mockCategoryPerformance.push({
           categoryId: catId,
           classId: cId,
           cadence,
           periodLabel: label,
-          periodStart: new Date(Date.now() - i * 86400000 * (cadence==='WEEKLY'?7:cadence==='MONTHLY'?30:365)).toISOString(),
+          periodStart: periodStart.toISOString(),
           qty: cQty, margin: cMargin, sales: cSales,
           splyQty: cSplyQty, splyMargin: cSplyMargin, splySales: cSplySales
         });
@@ -500,11 +502,11 @@ const generateCategoryDashboardData = () => {
       baseline,
       capture,
       ageGroups: [
-        { label: '18-24', percent: 15 },
-        { label: '25-34', percent: 35 },
-        { label: '35-44', percent: 25 },
-        { label: '45-54', percent: 15 },
-        { label: '55+', percent: 10 }
+        { label: '18-24', percent: 0.15 },
+        { label: '25-34', percent: 0.35 },
+        { label: '35-44', percent: 0.25 },
+        { label: '45-54', percent: 0.15 },
+        { label: '55+', percent: 0.10 }
       ],
       genderSplit: { male: 0.4, female: 0.6 }
     };
