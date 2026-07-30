@@ -862,14 +862,42 @@ export default function CategoryDashboard({ activePersona = 'Pat Cruz' }: { acti
                   tickFormatter={formatYAxis} 
                   width={60} 
                 />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                  formatter={(value, name) => {
-                    const formatted = trendMetric === 'qty' ? formatNumber(value) : formatCurrency(value);
-                    const label = name === trendMetric ? 'Current' : 'SPLY';
-                    return [formatted, label];
+                <Tooltip
+                  cursor={{ stroke: '#CBD5E1', strokeWidth: 1 }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+
+                    const period = payload[0].payload as CategoryPerformancePeriod;
+                    const currentValue = period[trendMetric];
+                    const splyKey = trendMetric === 'sales' ? 'splySales' : trendMetric === 'margin' ? 'splyMargin' : 'splyQty';
+                    const splyValue = period[splyKey];
+                    const pctChange = splyValue !== 0 ? ((currentValue - splyValue) / Math.abs(splyValue)) * 100 : null;
+                    const direction = pctChange === null || pctChange === 0 ? 'No change' : pctChange > 0 ? 'Increase' : 'Decrease';
+                    const directionClass = pctChange === null || pctChange === 0 ? 'text-text-muted' : pctChange > 0 ? 'text-success' : 'text-error';
+                    const formatValue = (value: number) => trendMetric === 'qty' ? formatNumber(value) : formatCurrency(value);
+
+                    return (
+                      <div className="min-w-[190px] rounded-[8px] border border-border-subtle bg-white p-3 shadow-lg">
+                        <p className="mb-2 text-[13px] font-semibold text-text-main">{label}</p>
+                        <div className="space-y-1.5 text-[12px]">
+                          <div className="flex items-center justify-between gap-5">
+                            <span className="text-brand-600">Current</span>
+                            <span className="font-semibold text-brand-600">{formatValue(currentValue)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-5">
+                            <span className="text-text-muted">SPLY</span>
+                            <span className="font-semibold text-text-muted">{formatValue(splyValue)}</span>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between gap-5 border-t border-border-subtle pt-2">
+                            <span className={directionClass}>{direction}</span>
+                            <span className={`font-bold ${directionClass}`}>
+                              {pctChange === null ? 'N/A' : `${Math.abs(pctChange).toFixed(1)}%`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
                   }}
-                  labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}
                 />
                 <Legend 
                   verticalAlign="top" 
