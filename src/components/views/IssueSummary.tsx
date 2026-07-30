@@ -56,23 +56,20 @@ const stageBadge: Record<StageKey, string> = {
 };
 
 const categorizationIssues = [
-  { label: 'Supermarket Premium', unresolved: 18, resolved: 82 },
-  { label: 'Supermarket Large', unresolved: 24, resolved: 76 },
-  { label: 'Supermarket Small', unresolved: 31, resolved: 69 },
-  { label: 'Express Large', unresolved: 27, resolved: 73 },
-  { label: 'Express Small', unresolved: 36, resolved: 64 },
-  { label: 'Market Savers', unresolved: 22, resolved: 78 },
-  { label: 'Bake & Resto Depot', unresolved: 29, resolved: 71 },
+  { label: 'SMR Large', unresolved: 24, resolved: 76 },
+  { label: 'SMR Medium', unresolved: 27, resolved: 73 },
+  { label: 'SMR Small', unresolved: 31, resolved: 69 },
+  { label: 'Express', unresolved: 36, resolved: 64 },
 ];
 
 const storeIssues = [
-  { label: 'LCC Legazpi', category: 'Supermarket Premium', unresolved: 16, resolved: 84 },
-  { label: 'LCC Daraga', category: 'Supermarket Large', unresolved: 23, resolved: 77 },
-  { label: 'LCC Tabaco', category: 'Supermarket Large', unresolved: 28, resolved: 72 },
-  { label: 'LCC Naga', category: 'Supermarket Premium', unresolved: 19, resolved: 81 },
-  { label: 'LCC Polangui', category: 'Supermarket Small', unresolved: 34, resolved: 66 },
-  { label: 'LCC Express Rawis', category: 'Express Large', unresolved: 27, resolved: 73 },
-  { label: 'LCC Express Penaranda', category: 'Express Small', unresolved: 38, resolved: 62 },
+  { label: 'LCC Legazpi', category: 'SMR Large', unresolved: 16, resolved: 84 },
+  { label: 'LCC Daraga', category: 'SMR Large', unresolved: 23, resolved: 77 },
+  { label: 'LCC Tabaco', category: 'SMR Medium', unresolved: 28, resolved: 72 },
+  { label: 'LCC Naga', category: 'SMR Medium', unresolved: 19, resolved: 81 },
+  { label: 'LCC Polangui', category: 'SMR Small', unresolved: 34, resolved: 66 },
+  { label: 'LCC Express Rawis', category: 'Express', unresolved: 27, resolved: 73 },
+  { label: 'LCC Express Penaranda', category: 'Express', unresolved: 38, resolved: 62 },
 ];
 
 export default function IssueSummary() {
@@ -218,18 +215,10 @@ export default function IssueSummary() {
                 }}
                 className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
               >
-                <option value="All">All Stores</option>
-                <optgroup label="LCC Supermarket">
-                  <option value="Supermarket Premium">Premium</option>
-                  <option value="Supermarket Large">Large</option>
-                  <option value="Supermarket Small">Small</option>
-                </optgroup>
-                <optgroup label="Express Mart">
-                  <option value="Express Large">Large</option>
-                  <option value="Express Small">Small</option>
-                </optgroup>
-                <option value="Market Savers">Market Savers</option>
-                <option value="Bake & Resto Depot">Bake & Resto Depot (BRD)</option>
+                <option value="All">All Store Categorizations</option>
+                {categorizationIssues.map(row => (
+                  <option key={row.label} value={row.label}>{row.label}</option>
+                ))}
               </select>
             </div>
 
@@ -293,7 +282,7 @@ export default function IssueSummary() {
           <div>
             <h3 className="text-[16px] font-semibold text-text-main">Transaction Level Issues</h3>
             <p className="text-[12px] text-text-muted mt-1">
-              Per {groupBy === 'categorization' ? 'Store Categorization' : 'Store'} · {activeStage}
+              {activeStage} issue status grouped by {groupBy === 'categorization' ? 'store categorization' : 'store'}
             </p>
           </div>
           <div className="flex items-center gap-5 text-[12px] text-text-muted">
