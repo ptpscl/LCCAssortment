@@ -286,8 +286,8 @@ export default function IssueSummary() {
             </p>
           </div>
           <div className="flex items-center gap-5 text-[12px] text-text-muted">
-            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#A9B7FF]" />Unresolved</span>
-            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#FF3347]" />Resolved + Clean</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-success" />Resolved + Clean</span>
+            <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-error" />Unresolved</span>
           </div>
         </div>
         <div className="space-y-4">
@@ -295,8 +295,8 @@ export default function IssueSummary() {
             <div key={row.label} className="grid grid-cols-1 md:grid-cols-[190px_1fr_88px] gap-2 md:gap-4 md:items-center">
               <span className="text-[12px] font-medium text-text-main truncate" title={row.label}>{row.label}</span>
               <div className="h-5 flex overflow-hidden rounded-[3px] bg-surface-bg">
-                <div className="bg-[#A9B7FF] transition-all duration-500" style={{ width: `${row.unresolved}%` }} />
-                <div className="bg-[#FF3347] transition-all duration-500" style={{ width: `${row.resolved}%` }} />
+                <div className="bg-success transition-all duration-500" style={{ width: `${row.resolved}%` }} />
+                <div className="bg-error transition-all duration-500" style={{ width: `${row.unresolved}%` }} />
               </div>
               <span className="text-[12px] text-text-muted md:text-right">{row.unresolved}% open</span>
             </div>
