@@ -50,9 +50,15 @@ const stageAnomalies: Record<StageKey, string[]> = {
 };
 
 const stageBadge: Record<StageKey, string> = {
-  'Stage A': 'bg-[#A9A9A9]',
-  'Stage B': 'bg-[#7A5CFA]',
-  'Stage C': 'bg-[#2F7D32]',
+  'Stage A': 'bg-brand-600 text-white',
+  'Stage B': 'bg-[#6495ED] text-white',
+  'Stage C': 'bg-[#AEC6CF] text-brand-700',
+};
+
+const stageAccent: Record<StageKey, string> = {
+  'Stage A': 'bg-brand-600',
+  'Stage B': 'bg-[#6495ED]',
+  'Stage C': 'bg-[#AEC6CF]',
 };
 
 type IssueCounts = { resolved: number; unresolved: number };
@@ -174,7 +180,7 @@ export default function IssueSummary() {
       return (
         <StageTable
           title="Customer Database + Loyalty"
-          accent="bg-[#A9A9A9]"
+          accent={stageAccent['Stage A']}
           headers={['Relational Flag', 'Rows', 'Loyalty Sales', '% loyalty sales']}
           rows={rows.map(([flag, rows, loyaltySales, pct]) => ({
             key: flag,
@@ -200,7 +206,7 @@ export default function IssueSummary() {
       return (
         <StageTable
           title="Customer DB + Loyalty + MMS Sales"
-          accent="bg-[#7A5CFA]"
+          accent={stageAccent['Stage B']}
           headers={['MATCH_STATUS', 'Rows', 'Sales Impact', '%']}
           rows={rows.map(([flag, rows, salesImpact, pct]) => ({
             key: flag,
@@ -219,7 +225,7 @@ export default function IssueSummary() {
     return (
       <StageTable
         title="Stage B + SKU Hierarchy"
-        accent="bg-[#2F7D32]"
+        accent={stageAccent['Stage C']}
         headers={['Relational Flag', 'Rows', 'Sales Impact', '%']}
         rows={rows.map(([flag, rows, salesImpact, pct]) => ({
           key: flag,
@@ -385,7 +391,7 @@ export default function IssueSummary() {
         <div className="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-surface-bg">
           <div className="flex items-center gap-3">
             <h3 className="text-[16px] font-semibold text-text-main">{activeStage}</h3>
-            <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold tracking-wider rounded border text-white ${stageBadge[activeStage]}`}>
+            <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold tracking-wider rounded border ${stageBadge[activeStage]}`}>
               RELATIONAL FLAGS + DATASET ANOMALIES
             </span>
           </div>
@@ -456,7 +462,7 @@ function StageTable({
           <tr key={row.key} className="border-t border-border-subtle">
             <td className="px-5 py-3 text-[14px] text-text-main">
               <div className="flex items-center gap-3">
-                <span className={`w-2.5 h-2.5 rounded-full ${row.tone === 'good' ? 'bg-green-500' : row.tone === 'bad' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${row.tone === 'good' ? 'bg-success' : row.tone === 'bad' ? 'bg-error' : 'bg-warning'}`} />
                 {row.cells[0]}
               </div>
             </td>
