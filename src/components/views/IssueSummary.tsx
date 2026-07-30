@@ -342,20 +342,6 @@ export default function IssueSummary() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-semibold text-text-muted uppercase tracking-wider">Stage Scope</label>
-              <select
-                value={activeStage}
-                onChange={e => setActiveStage(e.target.value as StageKey)}
-                className="h-9 px-3 pr-8 bg-white border border-border-subtle focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none rounded-[6px] text-[13px] text-text-main shadow-sm transition-all min-w-[180px]"
-              >
-                {stages.map(stage => (
-                  <option key={stage} value={stage}>
-                    {stage} - {stageDescriptions[stage]}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
