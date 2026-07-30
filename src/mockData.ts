@@ -48,18 +48,18 @@ export const mockClasses: ClassRecord[] = [
 ];
 
 export const mockStores: StoreRecord[] = [
-  { id: 'str-1', name: 'LCC Supermarket Legazpi', storeFormat: 'HYPER', storeCategorization: 'Supermarket Premium' },
-  { id: 'str-2', name: 'LCC Supermarket Tabaco', storeFormat: 'HYPER', storeCategorization: 'Supermarket Premium' },
-  { id: 'str-3', name: 'LCC Supermarket Naga', storeFormat: 'HYPER', storeCategorization: 'Supermarket Large' },
-  { id: 'str-4', name: 'LCC Supermarket Sorsogon', storeFormat: 'SUPER', storeCategorization: 'Supermarket Large' },
-  { id: 'str-5', name: 'LCC Supermarket Polangui', storeFormat: 'SUPER', storeCategorization: 'Supermarket Small' },
-  { id: 'str-6', name: 'LCC Supermarket Ligao', storeFormat: 'SUPER', storeCategorization: 'Supermarket Small' },
-  { id: 'str-7', name: 'LCC Supermarket Daraga', storeFormat: 'SUPER', storeCategorization: 'Supermarket Small' },
-  { id: 'str-8', name: 'LCC Express Legazpi', storeFormat: 'EXPRESS', storeCategorization: 'Express Large' },
-  { id: 'str-9', name: 'LCC Express Tabaco', storeFormat: 'EXPRESS', storeCategorization: 'Express Large' },
-  { id: 'str-10', name: 'LCC Express Daraga', storeFormat: 'EXPRESS', storeCategorization: 'Express Small' },
-  { id: 'str-11', name: 'LCC Express Polangui', storeFormat: 'EXPRESS', storeCategorization: 'Express Small' },
-  { id: 'str-12', name: 'LCC Express Guinobatan', storeFormat: 'EXPRESS', storeCategorization: 'Express Small' }
+  { id: 'str-1', name: 'LCC Supermarket Legazpi', storeFormat: 'HYPER' },
+  { id: 'str-2', name: 'LCC Supermarket Tabaco', storeFormat: 'HYPER' },
+  { id: 'str-3', name: 'LCC Supermarket Naga', storeFormat: 'HYPER' },
+  { id: 'str-4', name: 'LCC Supermarket Sorsogon', storeFormat: 'SUPER' },
+  { id: 'str-5', name: 'LCC Supermarket Polangui', storeFormat: 'SUPER' },
+  { id: 'str-6', name: 'LCC Supermarket Ligao', storeFormat: 'SUPER' },
+  { id: 'str-7', name: 'LCC Supermarket Daraga', storeFormat: 'SUPER' },
+  { id: 'str-8', name: 'LCC Express Legazpi', storeFormat: 'EXPRESS' },
+  { id: 'str-9', name: 'LCC Express Tabaco', storeFormat: 'EXPRESS' },
+  { id: 'str-10', name: 'LCC Express Daraga', storeFormat: 'EXPRESS' },
+  { id: 'str-11', name: 'LCC Express Polangui', storeFormat: 'EXPRESS' },
+  { id: 'str-12', name: 'LCC Express Guinobatan', storeFormat: 'EXPRESS' }
 ];
 
 export const mockSkus: SkuRecord[] = [];
@@ -75,9 +75,9 @@ const generateData = () => {
     const classRecord = patClasses[i % patClasses.length];
     const skuId = `sku-${skuCounter++}`;
     
-    const revenue = 8000 + ((i * 7919) % 42000);
-    const margin = Math.floor(revenue * (0.18 + (i % 5) * 0.025));
-    const qty = Math.floor(revenue / (65 + (i % 7) * 11));
+    const revenue = Math.floor(Math.random() * 50000) + 5000;
+    const margin = Math.floor(revenue * (0.15 + Math.random() * 0.2));
+    const qty = Math.floor(revenue / (50 + Math.random() * 100));
     
     const brandName = detergentBrands[i % detergentBrands.length];
 
@@ -88,11 +88,10 @@ const generateData = () => {
       classId: classRecord.id,
       flags: (i % 7 === 0) ? ['STOCKOUT'] : [],
       duplicateGroupId: (i % 10 === 0) ? 'dup-1' : null,
-      familyOverlapId: `FAM-${brandName.toUpperCase()}-${classRecord.id.toUpperCase()}`,
       revenueImpact: revenue,
       margin,
       qty,
-      weeksOfHistory: 24 + ((i * 13) % 96)
+      weeksOfHistory: Math.floor(Math.random() * 100) + 20
     };
     mockSkus.push(sku);
     
@@ -474,15 +473,18 @@ const generateCategoryDashboardData = () => {
     "Unmapped SKU in external file"
   ];
   for (let i = 0; i < 10; i++) {
-    const status: ExceptionStatus = i % 5 === 2 ? 'FOR_RESOLUTION' : i % 5 === 3 ? 'RESOLVED' : 'CLEAN';
+    const statusRand = Math.random();
+    let status: ExceptionStatus = 'CLEAN';
+    if (statusRand < 0.3) status = 'FOR_RESOLUTION';
+    else if (statusRand < 0.6) status = 'RESOLVED';
     
     mockExceptions.push({
       id: `exc-${i}`,
       categoryId: catId,
-      skuId: mockSkus[i % mockSkus.length].id,
+      skuId: Math.random() > 0.5 ? mockSkus[i % mockSkus.length].id : null,
       status,
       type: exceptionTypes[i % exceptionTypes.length],
-      detectedAt: new Date(Date.now() - (i + 1) * 86400000).toISOString(),
+      detectedAt: new Date(Date.now() - Math.random() * 86400000 * 10).toISOString(),
       resolvedAt: status === 'RESOLVED' ? new Date().toISOString() : null,
       resolvedNote: status === 'RESOLVED' ? 'Fixed data upstream' : null
     });
@@ -490,26 +492,21 @@ const generateCategoryDashboardData = () => {
 
   // 3. Loyalty Profiles
   const generateLoyalty = (scopeLevel: ScopeLevel, scopeId: string): LoyaltyProfile => {
-    const seed = scopeId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    const baseline = 0.48 + (seed % 16) / 100;
-    const capture = baseline * (0.76 + (seed % 9) / 100);
+    const baseline = 0.4 + Math.random() * 0.3; // 40-70%
+    const capture = baseline * (0.6 + Math.random() * 0.3); // capture is always less than baseline
     return {
       scopeLevel,
       scopeId,
       baseline,
       capture,
       ageGroups: [
-        { label: '18-24', percent: 0.14 },
-        { label: '25-34', percent: 0.31 },
-        { label: '35-44', percent: 0.27 },
-        { label: '45-54', percent: 0.17 },
-        { label: '55+', percent: 0.11 }
+        { label: '18-24', percent: 15 },
+        { label: '25-34', percent: 35 },
+        { label: '35-44', percent: 25 },
+        { label: '45-54', percent: 15 },
+        { label: '55+', percent: 10 }
       ],
-      genderSplit: { male: 0.42, female: 0.58 },
-      linkedCustomers: scopeLevel === 'CATEGORY' ? 18640 : scopeLevel === 'CLASS' ? 5240 : 680,
-      loyaltySales: scopeLevel === 'CATEGORY' ? 12840000 : scopeLevel === 'CLASS' ? 3640000 : 428000,
-      averageBasket: scopeLevel === 'CATEGORY' ? 742 : scopeLevel === 'CLASS' ? 688 : 631,
-      visitsPerCustomer: scopeLevel === 'CATEGORY' ? 3.8 : scopeLevel === 'CLASS' ? 3.2 : 2.7,
+      genderSplit: { male: 0.4, female: 0.6 }
     };
   };
 

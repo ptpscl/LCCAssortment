@@ -8,13 +8,12 @@ export type Flag =
   | 'BASKET_ANCHOR'
   | 'COVERAGE_RISK';
 export type StoreFormat = 'HYPER' | 'SUPER' | 'EXPRESS';
-export type StoreCategorization = 'Supermarket Premium' | 'Supermarket Large' | 'Supermarket Small' | 'Express Large' | 'Express Small';
 
 export interface DivisionRecord { id: string; name: string; }
 export interface DepartmentRecord { id: string; name: string; divisionId: string; }
 export interface CategoryRecord { id: string; name: string; departmentId: string; assignedCm: string; }
 export interface ClassRecord { id: string; name: string; categoryId: string; }
-export interface StoreRecord { id: string; name: string; storeFormat: StoreFormat; storeCategorization: StoreCategorization; }
+export interface StoreRecord { id: string; name: string; storeFormat: StoreFormat; }
 
 export interface SkuRecord {
   id: string;
@@ -23,7 +22,6 @@ export interface SkuRecord {
   classId: string;
   flags: Flag[];
   duplicateGroupId: string | null;
-  familyOverlapId: string;
   revenueImpact: number;
   weeksOfHistory: number;
   margin: number;
@@ -68,10 +66,6 @@ export interface LoyaltyProfile {
   capture: number;
   ageGroups: { label: string; percent: number }[];
   genderSplit: { male: number; female: number };
-  linkedCustomers: number;
-  loyaltySales: number;
-  averageBasket: number;
-  visitsPerCustomer: number;
 }
 
 export interface BrandRollup {

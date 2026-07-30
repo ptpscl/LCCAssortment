@@ -373,21 +373,6 @@ export const dataService = {
     };
   },
 
-  getExceptionCountsByClass: async (categoryId: string): Promise<Array<{ classId: string; clean: number; forResolution: number; resolved: number }>> => {
-    await delay(200);
-    const categoryClassIds = mockClasses.filter(c => c.categoryId === categoryId).map(c => c.id);
-    return categoryClassIds.map(classId => {
-      const skuIds = new Set(mockSkus.filter(s => s.classId === classId).map(s => s.id));
-      const exceptions = mockExceptions.filter(e => e.categoryId === categoryId && e.skuId && skuIds.has(e.skuId));
-      return {
-        classId,
-        clean: exceptions.filter(e => e.status === 'CLEAN').length,
-        forResolution: exceptions.filter(e => e.status === 'FOR_RESOLUTION').length,
-        resolved: exceptions.filter(e => e.status === 'RESOLVED').length,
-      };
-    });
-  },
-
   
   getPortfolioRollup: async (): Promise<any[]> => {
     // delay to simulate api
